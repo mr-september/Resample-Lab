@@ -66,6 +66,8 @@ interface OverlayRenderProps {
   maxX: number;
   minY: number;
   maxY: number;
+  width: number;
+  height: number;
 }
 
 interface PhaseChartProps {
@@ -91,12 +93,33 @@ export const PhaseChart: React.FC<PhaseChartProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: 100, height: 100 });
   const [hoverInfo, setHoverInfo] = useState<{
     x: number; y: number; valX: number; valY: number; isValid: boolean;
   } | null>(null);
 
   const xScale = useMemo(() => createScale(xConfig), [xConfig]);
   const yScale = useMemo(() => createScale(yConfig), [yConfig]);
+
+  // Track container dimensions for responsive overlays
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const updateSize = () => {
+      if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current;
+        setDimensions({ width: clientWidth, height: clientHeight });
+      }
+    };
+
+    // Initial measurement
+    updateSize();
+
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, []);
 
   // Paint Canvas
   useEffect(() => {
@@ -203,6 +226,7 @@ export const PhaseChart: React.FC<PhaseChartProps> = ({
              const pct = xScale.getPct(val) * 100;
              let textAnchor: "start" | "middle" | "end" = "middle";
              let xPos = `${pct}%`;
+             let dxVal: number | undefined = undefined;
              
              // Smart Label Positioning
              if (pct < 5) {
@@ -210,13 +234,14 @@ export const PhaseChart: React.FC<PhaseChartProps> = ({
                xPos = "4px";
              } else if (pct > 95) {
                textAnchor = "end";
-               xPos = "calc(100% - 4px)";
+               xPos = `100%`;
+               dxVal = -4;
              }
 
              return (
                <g key={`x-${val}`}>
                  <line x1={`${pct}%`} y1="0" x2={`${pct}%`} y2="100%" stroke="white" strokeOpacity={0.08} strokeWidth={1} />
-                 <text x={xPos} y="98%" fill="white" fillOpacity={0.4} fontSize="9" textAnchor={textAnchor} fontFamily="monospace">
+                 <text x={xPos} y="98%" fill="white" fillOpacity={0.4} fontSize="9" textAnchor={textAnchor} fontFamily="monospace" dx={dxVal}>
                    {val >= 1000 ? val/1000 + 'k' : val}
                  </text>
                </g>
@@ -227,18 +252,20 @@ export const PhaseChart: React.FC<PhaseChartProps> = ({
            {yScale.ticks.map(val => {
              const pct = (1 - yScale.getPct(val)) * 100;
              let yPos = `${pct - 1}%`;
+             let dyVal: number | undefined = undefined;
              
              // Smart Label Positioning
              if (pct < 5) { // Top Edge
                yPos = "10px"; 
              } else if (pct > 95) { // Bottom Edge
-               yPos = "calc(100% - 14px)"; // Lift up to avoid overlap with X axis
+               yPos = `100%`;
+               dyVal = -14; // Lift up to avoid overlap with X axis
              }
 
              return (
                <g key={`y-${val}`}>
                  <line x1="0" y1={`${pct}%`} x2="100%" y2={`${pct}%`} stroke="white" strokeOpacity={0.08} strokeWidth={1} />
-                 <text x="4" y={yPos} fill="white" fillOpacity={0.4} fontSize="9" textAnchor="start" fontFamily="monospace">
+                 <text x="4" y={yPos} fill="white" fillOpacity={0.4} fontSize="9" textAnchor="start" fontFamily="monospace" dy={dyVal}>
                    {val >= 1000 ? val/1000 + 'k' : val}
                  </text>
                </g>
@@ -252,7 +279,9 @@ export const PhaseChart: React.FC<PhaseChartProps> = ({
               minX: xScale.min,
               maxX: xScale.max,
               minY: yScale.min,
-              maxY: yScale.max
+              maxY: yScale.max,
+              width: dimensions.width,
+              height: dimensions.height
            })}
            
            <rect width="100%" height="100%" fill="none" stroke="white" strokeOpacity={0.2} strokeWidth="4" />

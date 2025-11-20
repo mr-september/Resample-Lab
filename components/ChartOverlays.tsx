@@ -31,6 +31,8 @@ interface OverlayProps {
   maxX: number;
   minY: number;
   maxY: number;
+  width: number;
+  height: number;
 }
 
 export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number }> = ({ getPctX, getPctY, minX, maxX }) => {
@@ -97,19 +99,13 @@ export const FeaturesVsTotalOverlay: React.FC<OverlayProps & { minority: number 
    );
 };
 
-export const FoldsVsMinorityOverlay: React.FC<OverlayProps> = ({ getPctX, getPctY, minX, maxX, minY, maxY }) => {
+export const FoldsVsMinorityOverlay: React.FC<OverlayProps> = ({ getPctX, getPctY, minX, maxX, minY, maxY, width, height }) => {
   // Boundary: Folds (Y) = Minority (X)
   // Invalid Region: Y > X
   
-  // We iterate X to draw the curve y=x.
-  // The curve is only visible where Min(Y_axis) <= x <= Max(Y_axis)
-  // AND Min(X_axis) <= x <= Max(X_axis)
-  
   const startLoop = Math.max(minX, minY);
   const endLoop = Math.min(maxX, maxY);
-  
-  // If the ranges don't overlap, we might not need to draw, but usually they do in this app.
-  
+    
   let pathD = "";
   
   // Sampling resolution
@@ -126,18 +122,19 @@ export const FoldsVsMinorityOverlay: React.FC<OverlayProps> = ({ getPctX, getPct
       const yEnd = (1 - getPctY(endLoop)) * 100;
       pathD += `L ${xEnd} ${yEnd} `;
   }
-
-  // Closing the path to fill the Top-Left triangle (where Y is high and X is low)
-  // Path currently goes from (startLoop, startLoop) to (endLoop, endLoop) along diagonal.
-  // We need to go to Top-Left corner (MinX, MaxY) basically.
-  // Top Left in SVG is (0,0) if axes are full range.
-  
-  // Point 1: End of curve (xEnd, yEnd) -> (on top edge or right edge)
-  // Point 2: Top-Left corner of the chart 
-  // Point 3: Start of curve
   
   const closurePath = `L 0 0 L ${getPctX(startLoop)*100} ${(1 - getPctY(startLoop))*100} Z`;
   const patternPath = `${pathD} ${closurePath}`;
+
+    // Calculate Dynamic Angle for Text based on pixel dimensions
+  const x1 = getPctX(startLoop) * width;
+  const y1 = (1 - getPctY(startLoop)) * height;
+  const x2 = getPctX(endLoop) * width;
+  const y2 = (1 - getPctY(endLoop)) * height;
+  
+  // atan2(dy, dx) gives angle in radians.
+  // Note: Screen Y is inverted relative to Cartesian (0 at top), but our y1/y2 are standard screen coords.
+  const angleDeg = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
   
   return (
     <g>
@@ -155,7 +152,7 @@ export const FoldsVsMinorityOverlay: React.FC<OverlayProps> = ({ getPctX, getPct
          <path d={pathD} stroke="#f87171" strokeWidth="2" strokeDasharray="4 4" fill="none" opacity="0.6" vectorEffect="non-scaling-stroke" />
        </svg>
 
-       {/* Label */}
+       {/* Label - Rotated dynamically around its center (16% width, 27% height) */}
        <text 
          x="16%" 
          y="27%" 
@@ -164,12 +161,11 @@ export const FoldsVsMinorityOverlay: React.FC<OverlayProps> = ({ getPctX, getPct
          fontSize="12" 
          fontFamily="monospace" 
          fontWeight="bold" 
+         transform={`rotate(${angleDeg}, ${width * 0.16}, ${height * 0.27})`}
+
          style={{ 
            pointerEvents: 'none', 
            textShadow: '0px 1px 2px rgba(0,0,0,0.8)',
-           transformBox: 'view-box',
-           transformOrigin: '16% 27%',
-           transform: 'rotate(-52deg)'
          }}
        >
          FOLDS &gt; MINORITY COUNT

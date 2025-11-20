@@ -26,7 +26,12 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run build
+      - name: Build site
+        run: npm run build
+        env:
+          # Use a relative base so assets in `dist` are referenced relatively.
+          # This makes `docs/` deployments work regardless of Pages repo/site configuration.
+          VITE_BASE: ./
 
       - name: Commit dist to docs/
         env:
