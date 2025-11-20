@@ -4,8 +4,7 @@ permissions:
   pages: write
   id-token: write
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch: {}
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
