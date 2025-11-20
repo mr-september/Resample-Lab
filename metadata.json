@@ -1,0 +1,5 @@
+{
+  "name": "Resample Lab",
+  "description": "The Geometry of Class Imbalance. An interactive heuristic engine for choosing resampling strategies based on dataset dimensionality.",
+  "requestFramePermissions": []
+}
