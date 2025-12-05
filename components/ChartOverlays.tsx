@@ -62,27 +62,6 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
   
   // atan2(dy, dx) gives angle in radians
   const angleDeg = Math.atan2(py2 - py1, px2 - px1) * (180 / Math.PI);
-  
-  // Position label based on a desired percentage target so it lands at ~74% x / 91% y.
-  // Compute a parametric t value from desired percentages using the line endpoints,
-  // average the X and Y-derived t values to reduce distortion from aspect ratio.
-  const desiredLabelPctX = 74;
-  const desiredLabelPctY = 91;
-
-  let tX = 0.5;
-  let tY = 0.5;
-  if (Math.abs(x2 - x1) > 1e-6) tX = (desiredLabelPctX - x1) / (x2 - x1);
-  if (Math.abs(y2 - y1) > 1e-6) tY = (desiredLabelPctY - y1) / (y2 - y1);
-
-  let labelT = (tX + tY) / 2;
-  labelT = Math.min(1, Math.max(0, labelT));
-
-  const labelPctX = x1 + (x2 - x1) * labelT;
-  const labelPctY = y1 + (y2 - y1) * labelT;
-
-  // Pixel coordinates for rotation center
-  const labelPxX = (labelPctX / 100) * width;
-  const labelPxY = (labelPctY / 100) * height;
 
   return (
     <g>
@@ -100,16 +79,16 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
         <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f87171" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" vectorEffect="non-scaling-stroke" />
       </svg>
 
-      {/* Label - Rotated dynamically to align with the dashed line */}
+      {/* Label - Rotated dynamically around its center (74% width, 91% height) */}
       <text 
-        x={`${labelPctX}%`}
-        y={`${labelPctY}%`}
+        x="74%" 
+        y="91%" 
         textAnchor="middle" 
         fill="#f87171" 
         fontSize="12" 
         fontFamily="monospace" 
         fontWeight="bold" 
-        transform={`rotate(${angleDeg}, ${labelPxX}, ${labelPxY})`}
+        transform={`rotate(${angleDeg}, ${width * 0.74}, ${height * 0.91})`}
         style={{ 
           pointerEvents: 'none', 
           textShadow: '0px 1px 2px rgba(0,0,0,0.8)',
