@@ -63,14 +63,31 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
   // atan2(dy, dx) gives angle in radians
   const angleDeg = Math.atan2(py2 - py1, px2 - px1) * (180 / Math.PI);
   
-  // Use explicit positioning per user request (74%, 91%) to ensure consistent placement
-  // Keep dynamic angle so the label remains aligned with the dashed line
-  const labelPctX = 74; // user-provided percentage x
-  const labelPctY = 91; // user-provided percentage y
-  
+  // Try to position label near a visually pleasing anchor (approx 74% x, 91% y as requested)
+  const targetPctX = 74; // percent across X axis
+  const targetPctY = 91; // percent down Y axis
+
+  // Solve for the interpolation terms along each axis independently, guard against division by zero.
+  const tx = (x2 - x1) !== 0 ? (targetPctX - x1) / (x2 - x1) : 0.5;
+  const ty = (y2 - y1) !== 0 ? (targetPctY - y1) / (y2 - y1) : 0.5;
+
+  // Average the two to find a compromise point on the line. If one axis can't compute, fall back to the other.
+  let labelT = Number.isFinite(tx) && Number.isFinite(ty) ? (tx + ty) / 2 : (Number.isFinite(tx) ? tx : (Number.isFinite(ty) ? ty : 0.5));
+
+  // Clamp labelT to avoid placing labels at the very edges
+  labelT = Math.max(0.05, Math.min(0.95, labelT));
+
+  const labelPctX = x1 + (x2 - x1) * labelT;
+  const labelPctY = y1 + (y2 - y1) * labelT;
+
+  // Ensure the label does not go outside the viewport by clamping to small margins
+  const margin = 3; // percent
+  const finalPctX = Math.max(margin, Math.min(100 - margin, labelPctX));
+  const finalPctY = Math.max(margin, Math.min(100 - margin, labelPctY));
+
   // Pixel coordinates for rotation center
-  const labelPxX = (labelPctX / 100) * width;
-  const labelPxY = (labelPctY / 100) * height;
+  const labelPxX = (finalPctX / 100) * width;
+  const labelPxY = (finalPctY / 100) * height;
 
   return (
     <g>
@@ -90,9 +107,10 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
 
       {/* Label - Rotated dynamically to align with the dashed line */}
       <text 
-        x={`${labelPctX}%`}
-        y={`${labelPctY}%`}
+        x={`${finalPctX}%`}
+        y={`${finalPctY}%`}
         textAnchor="middle" 
+        dominantBaseline="central"
         fill="#f87171" 
         fontSize="12" 
         fontFamily="monospace" 
