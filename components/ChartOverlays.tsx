@@ -63,12 +63,10 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
   // atan2(dy, dx) gives angle in radians
   const angleDeg = Math.atan2(py2 - py1, px2 - px1) * (180 / Math.PI);
   
-  // Position label at ~60% along the line (centered in the visible impossible region)
-  // The line goes from top-left (high Total, low Minority) to bottom-right (low Total, high Minority)
-  // We want to place it where it's visible within the striped region
-  const labelT = 0.60; // 60% along the line
-  const labelPctX = x1 + (x2 - x1) * labelT;
-  const labelPctY = y1 + (y2 - y1) * labelT;
+  // Use explicit positioning per user request (74%, 91%) to ensure consistent placement
+  // Keep dynamic angle so the label remains aligned with the dashed line
+  const labelPctX = 74; // user-provided percentage x
+  const labelPctY = 91; // user-provided percentage y
   
   // Pixel coordinates for rotation center
   const labelPxX = (labelPctX / 100) * width;
