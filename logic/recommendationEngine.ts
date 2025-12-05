@@ -1,4 +1,4 @@
-import { DatasetParams, Recommendation, StrategyType, FoldAnalysis, RGB } from '../types';
+import { DatasetParams, Recommendation, StrategyType, FoldAnalysis, RGB, RegimeWarning } from '../types';
 
 // --- Configuration & Constants ---
 
@@ -11,10 +11,12 @@ export const COLORS: Record<StrategyType, string> = {
 
 const THRESHOLDS = {
   DIM_LOW: 20,
-  DIM_HIGH: 100,
+  DIM_HIGH: 100,           // High-dimensional regime threshold (Blagus & Lusa, 2013)
   MIN_SAMPLES_BASE: 200,
-  EFFICIENCY_RATIO: 60,  // 1:60 imbalance
-  EFFICIENCY_TOTAL: 150000, // 150k samples
+  TINY_MINORITY: 50,       // Tiny minority regime (Zhao et al., 2025)
+  EPV_MIN: 10,             // Events Per Variable minimum (Zhao et al., 2025)
+  EFFICIENCY_RATIO: 60,    // 1:60 imbalance
+  EFFICIENCY_TOTAL: 50000, // Big data threshold (Van Hulse et al., 2007; Drummond & Holte, 2003)
   SPARSITY_CRITICAL: 0.6,
   SPARSITY_SKEWED: 0.3
 };
@@ -84,6 +86,26 @@ const getDistanceStability = (sparsity: number, homogeneity: number): number => 
   const distributionImpact = 0.2 + (0.8 * homogeneity); 
   const risk = baseInstability * distributionImpact;
   return Math.max(0, 1 - risk);
+};
+
+// Calculate Events Per Variable (EPV) - critical metric for small sample regimes
+const getEPV = (minority: number, features: number): number => {
+  return minority / Math.max(1, features);
+};
+
+// Check if in "Tiny Minority" regime (Zhao et al., 2025)
+const isTinyMinorityRegime = (minority: number, features: number): boolean => {
+  return minority < THRESHOLDS.TINY_MINORITY || getEPV(minority, features) < THRESHOLDS.EPV_MIN;
+};
+
+// Check if in "High-Dimensional" regime (Blagus & Lusa, 2013)
+const isHighDimensionalRegime = (features: number): boolean => {
+  return features > THRESHOLDS.DIM_HIGH;
+};
+
+// Check if in "Large-Scale" regime (Van Hulse et al., 2007)
+const isLargeScaleRegime = (total: number): boolean => {
+  return total > THRESHOLDS.EFFICIENCY_TOTAL;
 };
 
 // --- Core Calculation Engine ---
@@ -286,22 +308,104 @@ const analyzeFolds = (minority: number, folds: number, total: number): FoldAnaly
 // --- Main Recommendation Export ---
 
 export const analyzeDataset = (params: DatasetParams): Recommendation => {
-  const { features, minority, total, folds, sparsity, sparsityHomogeneity } = params;
+  const { features, minority, total, folds, sparsity, sparsityHomogeneity, requiresCalibratedProbabilities } = params;
   
   const weights = calculateWeights(features, minority, total, sparsity, sparsityHomogeneity);
   const { wOversample, wUndersample, wHybrid, wBaseline, stability, dominantOriginal } = weights;
 
-  // Determine winner
+  // Calculate regime indicators
+  const epv = getEPV(minority, features);
+  const inTinyMinorityRegime = isTinyMinorityRegime(minority, features);
+  const inHighDimRegime = isHighDimensionalRegime(features);
+  const inLargeScaleRegime = isLargeScaleRegime(total);
+
+  // Determine winner (may be overridden by regime logic)
   let strategy = StrategyType.BASELINE;
   let maxVal = wBaseline;
   if (wOversample > maxVal) { maxVal = wOversample; strategy = StrategyType.OVERSAMPLE; }
   if (wHybrid > maxVal) { maxVal = wHybrid; strategy = StrategyType.HYBRID; }
   if (wUndersample > maxVal) { maxVal = wUndersample; strategy = StrategyType.UNDERSAMPLE; }
 
+  // Override strategy based on critical regimes
+  if (inTinyMinorityRegime && (strategy === StrategyType.OVERSAMPLE)) {
+    // SMOTE fails in tiny minority regime - recommend hybrid/ensemble instead
+    strategy = StrategyType.HYBRID;
+  }
+  
+  if (inLargeScaleRegime && !inTinyMinorityRegime) {
+    // Large scale: prefer undersampling + threshold tuning
+    strategy = StrategyType.UNDERSAMPLE;
+  }
+
+  if (requiresCalibratedProbabilities) {
+    // Calibration required: avoid aggressive resampling
+    if (strategy === StrategyType.OVERSAMPLE || strategy === StrategyType.HYBRID) {
+      strategy = StrategyType.BASELINE;
+    }
+  }
+
   const foldAnalysis = analyzeFolds(minority, folds, total);
   const threshold = getMinorityThreshold(features);
   const ratio = total / Math.max(1, minority);
   
+  // Build regime warnings
+  const regimeWarnings: RegimeWarning[] = [];
+  const citations: string[] = [];
+
+  // Tiny Minority Regime Warning
+  if (inTinyMinorityRegime) {
+    regimeWarnings.push({
+      type: 'tiny-minority',
+      title: 'Tiny Minority Regime (EISM)',
+      message: minority < THRESHOLDS.TINY_MINORITY 
+        ? `Minority class (N=${minority}) < 50 samples. Standard SMOTE interpolates between sparse noise rather than true structure. Recommend: Hybrid Ensembles (e.g., HUSDOS-Boost) or Stratified Bagging.`
+        : `Events Per Variable (EPV=${epv.toFixed(1)}) < 10. Insufficient signal density for reliable synthetic generation.`,
+      citationIds: ['zhao2025', 'chawla2002']
+    });
+    citations.push('zhao2025', 'chawla2002');
+  }
+
+  // High-Dimensional Regime Warning
+  if (inHighDimRegime) {
+    regimeWarnings.push({
+      type: 'high-dimensional',
+      title: 'High-Dimensional Regime',
+      message: `Feature count (p=${features}) > 100. Euclidean distance becomes unreliable (Hubness phenomenon). Distance-based methods (SMOTE, ADASYN) may degrade performance. Recommend: Apply feature selection BEFORE resampling.`,
+      citationIds: ['blagus2013']
+    });
+    citations.push('blagus2013');
+  }
+
+  // Large-Scale Regime Warning
+  if (inLargeScaleRegime) {
+    regimeWarnings.push({
+      type: 'large-scale',
+      title: 'Large-Scale Data Regime',
+      message: `Total samples (N=${total.toLocaleString()}) > 50,000. Oversampling is computationally wasteful with minimal metric gain. Recommend: Random Undersampling + Decision Threshold Tuning.`,
+      citationIds: ['drummond2003', 'vanhulse2007']
+    });
+    citations.push('drummond2003', 'vanhulse2007');
+  }
+
+  // Calibration Warning (always show if resampling is recommended)
+  if (strategy !== StrategyType.BASELINE) {
+    regimeWarnings.push({
+      type: 'calibration',
+      title: 'Calibration Impact',
+      message: 'All resampling methods distort probability estimates. A predicted 80% risk may actually represent 10% true probability. If calibrated probabilities are required, use Class Weights + Isotonic Calibration instead.',
+      citationIds: ['elhassan2016']
+    });
+    citations.push('elhassan2016');
+  }
+
+  // Fold Integrity Warning (always show as best practice)
+  regimeWarnings.push({
+    type: 'fold-integrity',
+    title: 'Cross-Validation Best Practice',
+    message: 'Apply Feature Selection and Resampling INSIDE the cross-validation loop, not before. Performing these steps on the full dataset causes data leakage and inflated performance estimates.',
+    citationIds: ['blagus2013', 'elhassan2016']
+  });
+
   // Generate Text Content
   let result: Recommendation = {
     strategy,
@@ -311,7 +415,9 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
     foldTarget: '',
     samplingMix: '',
     color: COLORS[strategy],
-    foldAnalysis
+    foldAnalysis,
+    citations: [...new Set(citations)], // Deduplicate
+    regimeWarnings
   };
 
   const transitionNote = (minority > threshold * 0.8 && minority < threshold * 1.2) 
@@ -321,10 +427,17 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
   const wasForcedToBaseline = strategy === StrategyType.BASELINE && (dominantOriginal === StrategyType.OVERSAMPLE || dominantOriginal === StrategyType.HYBRID);
   const useUndersampling = strategy === StrategyType.UNDERSAMPLE;
 
+  // Add calibration note if relevant
+  if (requiresCalibratedProbabilities) {
+    result.calibrationNote = "Calibration Mode: Aggressive resampling disabled. Using Class Weights preserves probability estimates. Consider Isotonic Calibration or Platt Scaling post-training.";
+  }
+
   if (wasForcedToBaseline) {
-     // Heuristic: If sparsity is high but concentrated (skewed), features can be handled specifically.
-     // If sparsity is high and uniform, the distance metrics are just noise.
-     if (sparsity > 0.5 && sparsityHomogeneity < 0.3) {
+     if (requiresCalibratedProbabilities) {
+        result.title = "Class Weights + Calibration";
+        result.description = "Probability Calibration Required.";
+        result.rationale = `Resampling would distort probability estimates. Class Weights maintain calibration while addressing imbalance. Apply Isotonic Calibration post-training for optimal Brier Score.`;
+     } else if (sparsity > 0.5 && sparsityHomogeneity < 0.3) {
         result.title = `Specialized ${dominantOriginal}`;
         result.description = "Structured Sparsity Detected.";
         result.rationale = `High sparsity (${Math.round(sparsity*100)}%) but concentrated. Standard interpolation (SMOTE) is unreliable. Strategy: Process features separately—interpolate dense columns, impute sparse ones.`;
@@ -337,6 +450,16 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
         result.sparsityWarning = "Critical Sparsity: Euclidean distance metrics are unstable.";
      }
   } 
+  else if (inTinyMinorityRegime && strategy === StrategyType.HYBRID) {
+    result.title = "Hybrid Ensemble / Stratified Bagging";
+    result.description = "Tiny Minority Regime Detected.";
+    result.rationale = `With ${minority < THRESHOLDS.TINY_MINORITY ? `only ${minority} minority samples` : `EPV of ${epv.toFixed(1)}`}, standard SMOTE creates synthetic artifacts. Hybrid Ensembles (e.g., HUSDOS-Boost, EasyEnsemble) or Stratified Bagging are statistically superior.`;
+  }
+  else if (inLargeScaleRegime && strategy === StrategyType.UNDERSAMPLE) {
+    result.title = "Undersampling + Threshold Tuning";
+    result.description = "Large-Scale Data Regime.";
+    result.rationale = `With ${total.toLocaleString()} total samples, oversampling is computationally wasteful. Random Undersampling achieves equivalent performance at a fraction of cost. Combine with Decision Threshold Tuning for optimal F1/precision-recall trade-off.`;
+  }
   else if (features <= THRESHOLDS.DIM_LOW) {
     if (minority < threshold) {
       result.title = "Oversampling or Hybrid";
@@ -366,11 +489,11 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
     if (minority < threshold) {
       result.title = "Hybrid or Algorithmic Approaches";
       result.description = "High-Dimensional, Sparse Regime.";
-      result.rationale = `High dimensionality (p=${features}) induces sparsity (Curse of Dimensionality).${transitionNote} Combine generation with aggressive cleaning (Hybrid) or utilize Anomaly Detection models.`;
+      result.rationale = `High dimensionality (p=${features}) induces sparsity (Curse of Dimensionality).${transitionNote} Combine generation with aggressive cleaning (Hybrid) or utilize Anomaly Detection models. Apply feature selection first.`;
     } else {
       result.title = "Undersampling Strategy";
       result.description = "High-Dimensional, Large Scale Data.";
-      result.rationale = `Undersampling reduces computational load and noise without disrupting the manifold structure in high dimensions.`;
+      result.rationale = `Undersampling reduces computational load and noise without disrupting the manifold structure in high dimensions. Consider feature selection to improve distance metric reliability.`;
     }
   }
   

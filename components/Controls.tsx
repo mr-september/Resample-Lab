@@ -1,6 +1,6 @@
 import React from 'react';
 import { DatasetParams } from '../types';
-import { RefreshCw, Layers, Users, Hash, Info, Grid, BoxSelect, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Layers, Users, Hash, Info, Grid, BoxSelect, AlertTriangle, Target } from 'lucide-react';
 
 interface ControlsProps {
   params: DatasetParams;
@@ -272,6 +272,41 @@ export const Controls: React.FC<ControlsProps> = ({ params, onChange }) => {
         <p>
           <strong>Tip:</strong> Setting <em>k</em> to <strong>∞</strong> or the dataset size effectively enables <strong>Leave-One-Out Cross-Validation</strong> (LOOCV).
         </p>
+      </div>
+
+      {/* Calibration Toggle */}
+      <div className="mt-3 pt-3 border-t border-zinc-800">
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="relative mt-0.5">
+            <input
+              type="checkbox"
+              checked={params.requiresCalibratedProbabilities}
+              onChange={(e) => onChange({ ...params, requiresCalibratedProbabilities: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-zinc-700 rounded-full peer peer-checked:bg-amber-500/60 transition-colors"></div>
+            <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-zinc-400 rounded-full transition-all peer-checked:translate-x-4 peer-checked:bg-amber-200"></div>
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">
+              <Target className="w-3.5 h-3.5 text-amber-400" />
+              Require Calibrated Probabilities
+            </div>
+            <span className="text-[10px] text-zinc-500 leading-tight mt-0.5">
+              Enable if accurate risk/probability estimates are needed (e.g., medical diagnosis, credit scoring)
+            </span>
+          </div>
+        </label>
+        
+        {params.requiresCalibratedProbabilities && (
+          <div className="mt-2 mx-1 p-2 bg-amber-500/10 border border-amber-500/30 rounded-md flex gap-2 items-start animate-in fade-in slide-in-from-top-1 duration-200">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-amber-300 leading-tight">Calibration Mode Active</span>
+              <span className="text-[9px] text-amber-200/70 leading-tight">Aggressive resampling disabled. Recommendations favor Class Weights + Isotonic Calibration.</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

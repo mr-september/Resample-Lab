@@ -65,6 +65,7 @@ function App() {
     folds: 5,
     sparsity: 0.0,
     sparsityHomogeneity: 0.5,
+    requiresCalibratedProbabilities: false,
   });
 
   const recommendation = analyzeDataset(params);

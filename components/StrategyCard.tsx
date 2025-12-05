@@ -1,13 +1,245 @@
-import React from 'react';
-import { Recommendation } from '../types';
-import { AlertCircle, Scale, Layers, BarChart2, GraduationCap, AlertTriangle, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Recommendation, CITATIONS, Citation } from '../types';
+import { AlertCircle, Scale, Layers, BarChart2, GraduationCap, AlertTriangle, Info, BookOpen, Download, ChevronDown, ChevronUp, ExternalLink, Copy, Check } from 'lucide-react';
 
 interface StrategyCardProps {
   recommendation: Recommendation;
 }
 
+// --- Citation Export Utilities ---
+
+const formatBibtex = (citation: Citation): string => {
+  const type = citation.journal.toLowerCase().includes('proceedings') ? 'inproceedings' : 
+               citation.journal.toLowerCase().includes('arxiv') ? 'misc' : 'article';
+  const key = `${citation.authors.split(',')[0].split(' ').pop()?.toLowerCase()}${citation.year}`;
+  
+  if (type === 'inproceedings') {
+    return `@inproceedings{${key},
+  author = {${citation.authors}},
+  title = {${citation.title}},
+  booktitle = {${citation.journal}},
+  year = {${citation.year}}
+}`;
+  } else if (type === 'misc') {
+    return `@misc{${key},
+  author = {${citation.authors}},
+  title = {${citation.title}},
+  howpublished = {${citation.journal}},
+  year = {${citation.year}}
+}`;
+  }
+  return `@article{${key},
+  author = {${citation.authors}},
+  title = {${citation.title}},
+  journal = {${citation.journal}},
+  year = {${citation.year}}
+}`;
+};
+
+const formatAPA = (citation: Citation): string => {
+  return `${citation.authors} (${citation.year}). ${citation.title}. ${citation.journal}.`;
+};
+
+const formatPlaintext = (citation: Citation): string => {
+  return `${citation.authors} (${citation.year}). "${citation.title}." ${citation.journal}.`;
+};
+
+// --- Regime Warning Component ---
+
+const RegimeWarningCard: React.FC<{ warning: NonNullable<Recommendation['regimeWarnings']>[number] }> = ({ warning }) => {
+  const [isExpanded, setIsExpanded] = useState(warning.type !== 'fold-integrity'); // Fold integrity collapsed by default
+  
+  const getWarningStyle = () => {
+    switch (warning.type) {
+      case 'tiny-minority':
+        return { bg: 'bg-red-950/40', border: 'border-red-500/30', icon: 'text-red-400', title: 'text-red-300' };
+      case 'high-dimensional':
+        return { bg: 'bg-orange-950/40', border: 'border-orange-500/30', icon: 'text-orange-400', title: 'text-orange-300' };
+      case 'large-scale':
+        return { bg: 'bg-blue-950/40', border: 'border-blue-500/30', icon: 'text-blue-400', title: 'text-blue-300' };
+      case 'calibration':
+        return { bg: 'bg-amber-950/40', border: 'border-amber-500/30', icon: 'text-amber-400', title: 'text-amber-300' };
+      case 'fold-integrity':
+        return { bg: 'bg-indigo-950/40', border: 'border-indigo-500/30', icon: 'text-indigo-400', title: 'text-indigo-300' };
+      default:
+        return { bg: 'bg-zinc-900', border: 'border-zinc-700', icon: 'text-zinc-400', title: 'text-zinc-300' };
+    }
+  };
+
+  const style = getWarningStyle();
+
+  return (
+    <div className={`${style.bg} ${style.border} border rounded-lg overflow-hidden`}>
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between p-2.5 hover:bg-white/5 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <AlertTriangle className={`w-3.5 h-3.5 ${style.icon}`} />
+          <span className={`text-xs font-semibold ${style.title}`}>{warning.title}</span>
+        </div>
+        {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-zinc-500" /> : <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />}
+      </button>
+      
+      {isExpanded && (
+        <div className="px-2.5 pb-2.5 pt-0">
+          <p className="text-[11px] text-zinc-300 leading-relaxed mb-2">{warning.message}</p>
+          {warning.citationIds.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {warning.citationIds.map(id => {
+                const citation = CITATIONS[id];
+                if (!citation) return null;
+                return (
+                  <span key={id} className="text-[9px] px-1.5 py-0.5 bg-black/30 rounded text-zinc-400 font-mono">
+                    [{citation.authors.split(',')[0].split(' ').pop()}, {citation.year}]
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- Citations Panel Component ---
+
+const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'bibtex' | 'apa' | 'plaintext'>('bibtex');
+  const [copied, setCopied] = useState(false);
+
+  const uniqueCitations = [...new Set(citationIds)]
+    .map(id => CITATIONS[id])
+    .filter(Boolean);
+
+  if (uniqueCitations.length === 0) return null;
+
+  const getFormattedCitations = (): string => {
+    return uniqueCitations.map(c => {
+      switch (exportFormat) {
+        case 'bibtex': return formatBibtex(c);
+        case 'apa': return formatAPA(c);
+        case 'plaintext': return formatPlaintext(c);
+      }
+    }).join('\n\n');
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(getFormattedCitations());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    const content = getFormattedCitations();
+    const ext = exportFormat === 'bibtex' ? 'bib' : 'txt';
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `resample-lab-citations.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors"
+      >
+        <div className="flex items-center gap-2 text-zinc-200">
+          <BookOpen className="w-4 h-4 text-emerald-400" />
+          <span className="font-semibold text-sm">References & Citations</span>
+          <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded-full font-mono">
+            {uniqueCitations.length}
+          </span>
+        </div>
+        {isOpen ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
+      </button>
+
+      {isOpen && (
+        <div className="border-t border-zinc-800 p-4">
+          {/* Export Controls */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex gap-1">
+              {(['bibtex', 'apa', 'plaintext'] as const).map(format => (
+                <button
+                  key={format}
+                  onClick={() => setExportFormat(format)}
+                  className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded transition-colors ${
+                    exportFormat === format 
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                      : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700'
+                  }`}
+                >
+                  {format}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:text-white rounded border border-zinc-700 hover:border-zinc-600 transition-colors"
+              >
+                {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                {copied ? 'Copied!' : 'Copy All'}
+              </button>
+              <button
+                onClick={handleDownload}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 rounded border border-emerald-500/30 transition-colors"
+              >
+                <Download className="w-3 h-3" />
+                Download
+              </button>
+            </div>
+          </div>
+
+          {/* Citation List */}
+          <div className="space-y-3">
+            {uniqueCitations.map((citation, idx) => (
+              <div key={citation.id} className="p-3 bg-zinc-950/50 rounded-lg border border-zinc-800/50">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="text-xs text-zinc-200 font-medium leading-tight mb-1">
+                      {citation.title}
+                    </p>
+                    <p className="text-[10px] text-zinc-400">
+                      {citation.authors} ({citation.year})
+                    </p>
+                    <p className="text-[10px] text-zinc-500 italic">
+                      {citation.journal}
+                    </p>
+                  </div>
+                  <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-500 font-mono shrink-0">
+                    [{idx + 1}]
+                  </span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-zinc-800/50">
+                  <span className="text-[9px] text-emerald-400/80 font-medium">Relevance: </span>
+                  <span className="text-[9px] text-zinc-400">{citation.relevance}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const StrategyCard: React.FC<StrategyCardProps> = ({ recommendation }) => {
-  const { foldAnalysis, sparsityWarning } = recommendation;
+  const { foldAnalysis, sparsityWarning, regimeWarnings, citations, calibrationNote } = recommendation;
+
+  // Collect all citation IDs from regime warnings too
+  const allCitationIds = [
+    ...citations,
+    ...regimeWarnings.flatMap(w => w.citationIds)
+  ];
 
   return (
     <div className="flex flex-col gap-4">
@@ -32,7 +264,32 @@ export const StrategyCard: React.FC<StrategyCardProps> = ({ recommendation }) =>
         <p className="text-zinc-300 text-lg leading-relaxed">
           {recommendation.description}
         </p>
+        
+        {/* Calibration Mode Indicator */}
+        {calibrationNote && (
+          <div className="mt-3 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <div className="flex items-start gap-2 text-xs text-amber-200/90">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+              <p>{calibrationNote}</p>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Regime Warnings Section */}
+      {regimeWarnings.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">
+            <AlertTriangle className="w-3 h-3" />
+            Critical Regime Warnings
+          </div>
+          <div className="space-y-2">
+            {regimeWarnings.map((warning, idx) => (
+              <RegimeWarningCard key={`${warning.type}-${idx}`} warning={warning} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Detailed Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -130,6 +387,9 @@ export const StrategyCard: React.FC<StrategyCardProps> = ({ recommendation }) =>
 
         </div>
       </div>
+
+      {/* Citations Panel */}
+      <CitationsPanel citationIds={allCitationIds} />
 
       {/* Disclaimer Footer */}
       <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-950/30 border border-zinc-800/50">
