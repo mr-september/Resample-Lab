@@ -35,7 +35,7 @@ interface OverlayProps {
   height: number;
 }
 
-export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number }> = ({ getPctX, getPctY, minX, maxX }) => {
+export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number }> = ({ getPctX, getPctY, minX, maxX, width, height }) => {
   // Line y = x (Total = Minority)
   
   // Determine the valid range for the diagonal within this chart's view
@@ -54,6 +54,19 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
   // Polygon points for fill (Region Total < Minority -> Below the line)
   const points = `${x1},${y1} ${x2},${y2} ${x2},100 ${x1},100`;
 
+  // Calculate Dynamic Angle for Text based on pixel dimensions
+  const px1 = (x1 / 100) * width;
+  const py1 = (y1 / 100) * height;
+  const px2 = (x2 / 100) * width;
+  const py2 = (y2 / 100) * height;
+  
+  // atan2(dy, dx) gives angle in radians
+  const angleDeg = Math.atan2(py2 - py1, px2 - px1) * (180 / Math.PI);
+  
+  // Position label at ~84% along the line (closer to bottom-right corner)
+  const labelPctX = 84;
+  const labelPctY = 73;
+
   return (
     <g>
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" x="0" y="0" width="100%" height="100%" style={{ overflow: 'visible' }}>
@@ -70,8 +83,22 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
         <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f87171" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" vectorEffect="non-scaling-stroke" />
       </svg>
 
-      <text x="95%" y="92%" textAnchor="end" fill="#f87171" fontSize="12" fontFamily="monospace" opacity="1" fontWeight="bold" style={{ pointerEvents: 'none', textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>
-        IMPOSSIBLE REGION
+      {/* Label - Rotated dynamically to align with the dashed line */}
+      <text 
+        x={`${labelPctX}%`}
+        y={`${labelPctY}%`}
+        textAnchor="middle" 
+        fill="#f87171" 
+        fontSize="12" 
+        fontFamily="monospace" 
+        fontWeight="bold" 
+        transform={`rotate(${angleDeg}, ${width * labelPctX / 100}, ${height * labelPctY / 100})`}
+        style={{ 
+          pointerEvents: 'none', 
+          textShadow: '0px 1px 2px rgba(0,0,0,0.8)',
+        }}
+      >
+        MINORITY COUNT &gt; TOTAL SAMPLES
       </text>
     </g>
   );
@@ -80,10 +107,27 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
 export const FeaturesVsMinorityOverlay: React.FC<OverlayProps & { total: number }> = ({ getPctX, total }) => {
    const pct = getPctX(total);
    if (pct < 0 || pct > 1) return null;
+   
+   const linePctX = pct * 100;
+   
    return (
      <g>
-       <line x1={`${pct*100}%`} y1="0" x2={`${pct*100}%`} y2="100%" stroke="#f87171" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" />
-       <ImpossibleLabel x={pct*100} xOffset={-16} />
+       <svg viewBox="0 0 100 100" preserveAspectRatio="none" x="0" y="0" width="100%" height="100%" style={{ overflow: 'visible' }}>
+         <defs>
+           <pattern id="striped-invalid-features-minority" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+             <line x1="0" y1="0" x2="0" y2="8" stroke="#f87171" strokeWidth="2" opacity="0.2" />
+           </pattern>
+         </defs>
+         
+         {/* Filled region for impossible area (Minority > Total, i.e. right of the line) */}
+         <polygon points={`${linePctX},0 100,0 100,100 ${linePctX},100`} fill="url(#striped-invalid-features-minority)" />
+         
+         {/* Dashed Boundary Line */}
+         <line x1={linePctX} y1="0" x2={linePctX} y2="100" stroke="#f87171" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" vectorEffect="non-scaling-stroke" />
+       </svg>
+       
+       {/* Label positioned on the line */}
+       <ImpossibleLabel x={linePctX} xOffset={0} />
      </g>
    );
 };
@@ -91,10 +135,27 @@ export const FeaturesVsMinorityOverlay: React.FC<OverlayProps & { total: number 
 export const FeaturesVsTotalOverlay: React.FC<OverlayProps & { minority: number }> = ({ getPctX, minority }) => {
    const pct = getPctX(minority);
    if (pct < 0 || pct > 1) return null;
+   
+   const linePctX = pct * 100;
+   
    return (
      <g>
-       <line x1={`${pct*100}%`} y1="0" x2={`${pct*100}%`} y2="100%" stroke="#f87171" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" />
-       <ImpossibleLabel x={pct*100} xOffset={16} />
+       <svg viewBox="0 0 100 100" preserveAspectRatio="none" x="0" y="0" width="100%" height="100%" style={{ overflow: 'visible' }}>
+         <defs>
+           <pattern id="striped-invalid-features-total" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+             <line x1="0" y1="0" x2="0" y2="8" stroke="#f87171" strokeWidth="2" opacity="0.2" />
+           </pattern>
+         </defs>
+         
+         {/* Filled region for impossible area (Total < Minority, i.e. left of the line) */}
+         <polygon points={`0,0 ${linePctX},0 ${linePctX},100 0,100`} fill="url(#striped-invalid-features-total)" />
+         
+         {/* Dashed Boundary Line */}
+         <line x1={linePctX} y1="0" x2={linePctX} y2="100" stroke="#f87171" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" vectorEffect="non-scaling-stroke" />
+       </svg>
+       
+       {/* Label positioned on the line */}
+       <ImpossibleLabel x={linePctX} xOffset={0} />
      </g>
    );
 };

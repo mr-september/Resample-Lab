@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Recommendation, CITATIONS, Citation } from '../types';
-import { AlertCircle, Scale, Layers, BarChart2, GraduationCap, AlertTriangle, Info, BookOpen, Download, ChevronDown, ChevronUp, ExternalLink, Copy, Check } from 'lucide-react';
+import { AlertCircle, Scale, Layers, BarChart2, GraduationCap, AlertTriangle, Info, BookOpen, Download, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 
 interface StrategyCardProps {
   recommendation: Recommendation;
@@ -40,8 +40,149 @@ const formatAPA = (citation: Citation): string => {
   return `${citation.authors} (${citation.year}). ${citation.title}. ${citation.journal}.`;
 };
 
-const formatPlaintext = (citation: Citation): string => {
-  return `${citation.authors} (${citation.year}). "${citation.title}." ${citation.journal}.`;
+const formatMLA = (citation: Citation): string => {
+  // MLA format: Authors. "Title." Journal, Year.
+  return `${citation.authors}. "${citation.title}." ${citation.journal}, ${citation.year}.`;
+};
+
+const formatChicago = (citation: Citation): string => {
+  // Chicago format: Authors. "Title." Journal (Year).
+  return `${citation.authors}. "${citation.title}." ${citation.journal} (${citation.year}).`;
+};
+
+const formatVancouver = (citation: Citation): string => {
+  // Vancouver format: Authors. Title. Journal. Year.
+  return `${citation.authors}. ${citation.title}. ${citation.journal}. ${citation.year}.`;
+};
+
+const formatRIS = (citation: Citation): string => {
+  const type = citation.journal.toLowerCase().includes('proceedings') ? 'CONF' : 
+               citation.journal.toLowerCase().includes('arxiv') ? 'UNPB' : 'JOUR';
+  return `TY  - ${type}
+AU  - ${citation.authors.split(', ').join('\nAU  - ')}
+TI  - ${citation.title}
+JO  - ${citation.journal}
+PY  - ${citation.year}
+ER  - `;
+};
+
+const formatEndNote = (citation: Citation): string => {
+  // EndNote export format (similar to RIS)
+  const type = citation.journal.toLowerCase().includes('proceedings') ? 'Conference Proceedings' : 
+               citation.journal.toLowerCase().includes('arxiv') ? 'Preprint' : 'Journal Article';
+  return `%0 ${type}
+%A ${citation.authors.split(', ').join('\n%A ')}
+%T ${citation.title}
+%J ${citation.journal}
+%D ${citation.year}`;
+};
+
+type CitationFormat = 'bibtex' | 'apa' | 'mla' | 'chicago' | 'vancouver' | 'ris' | 'endnote';
+
+const formatCitation = (citation: Citation, format: CitationFormat): string => {
+  switch (format) {
+    case 'bibtex': return formatBibtex(citation);
+    case 'apa': return formatAPA(citation);
+    case 'mla': return formatMLA(citation);
+    case 'chicago': return formatChicago(citation);
+    case 'vancouver': return formatVancouver(citation);
+    case 'ris': return formatRIS(citation);
+    case 'endnote': return formatEndNote(citation);
+  }
+};
+
+const getFileExtension = (format: CitationFormat): string => {
+  switch (format) {
+    case 'bibtex': return 'bib';
+    case 'ris': return 'ris';
+    case 'endnote': return 'enw';
+    default: return 'txt';
+  }
+};
+
+const FORMAT_LABELS: Record<CitationFormat, string> = {
+  bibtex: 'BibTeX',
+  apa: 'APA',
+  mla: 'MLA',
+  chicago: 'Chicago',
+  vancouver: 'Vancouver',
+  ris: 'RIS',
+  endnote: 'EndNote'
+};
+
+// --- Individual Citation Download Component ---
+
+const CitationDownloadButtons: React.FC<{ citation: Citation }> = ({ citation }) => {
+  const [showMenu, setShowMenu] = useState(false);
+
+  const handleDownload = (format: CitationFormat) => {
+    const content = formatCitation(citation, format);
+    const ext = getFileExtension(format);
+    const key = `${citation.authors.split(',')[0].split(' ').pop()?.toLowerCase()}${citation.year}`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${key}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setShowMenu(false);
+  };
+
+  const handleCopy = async (format: CitationFormat) => {
+    const content = formatCitation(citation, format);
+    await navigator.clipboard.writeText(content);
+    setShowMenu(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setShowMenu(!showMenu)}
+        className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium bg-zinc-800 text-zinc-400 hover:text-zinc-200 rounded border border-zinc-700 hover:border-zinc-600 transition-colors"
+      >
+        <Download className="w-2.5 h-2.5" />
+        Export
+        <ChevronDown className="w-2.5 h-2.5" />
+      </button>
+      
+      {showMenu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+          <div className="absolute right-0 top-full mt-1 z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl min-w-[140px] overflow-hidden">
+            <div className="text-[8px] text-zinc-500 uppercase tracking-wider px-2 py-1 border-b border-zinc-800">
+              Copy to Clipboard
+            </div>
+            {(['apa', 'mla', 'chicago', 'vancouver', 'bibtex'] as CitationFormat[]).map(format => (
+              <button
+                key={`copy-${format}`}
+                onClick={() => handleCopy(format)}
+                className="w-full text-left px-2 py-1.5 text-[10px] text-zinc-300 hover:bg-zinc-800 flex items-center gap-2"
+              >
+                <Copy className="w-2.5 h-2.5 text-zinc-500" />
+                {FORMAT_LABELS[format]}
+              </button>
+            ))}
+            <div className="text-[8px] text-zinc-500 uppercase tracking-wider px-2 py-1 border-t border-zinc-800">
+              Download File
+            </div>
+            {(['bibtex', 'ris', 'endnote'] as CitationFormat[]).map(format => (
+              <button
+                key={`dl-${format}`}
+                onClick={() => handleDownload(format)}
+                className="w-full text-left px-2 py-1.5 text-[10px] text-zinc-300 hover:bg-zinc-800 flex items-center gap-2"
+              >
+                <Download className="w-2.5 h-2.5 text-emerald-500" />
+                {FORMAT_LABELS[format]} (.{getFileExtension(format)})
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
 // --- Regime Warning Component ---
@@ -107,7 +248,7 @@ const RegimeWarningCard: React.FC<{ warning: NonNullable<Recommendation['regimeW
 
 const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'bibtex' | 'apa' | 'plaintext'>('bibtex');
+  const [exportFormat, setExportFormat] = useState<CitationFormat>('apa');
   const [copied, setCopied] = useState(false);
 
   const uniqueCitations = [...new Set(citationIds)]
@@ -117,13 +258,7 @@ const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) =>
   if (uniqueCitations.length === 0) return null;
 
   const getFormattedCitations = (): string => {
-    return uniqueCitations.map(c => {
-      switch (exportFormat) {
-        case 'bibtex': return formatBibtex(c);
-        case 'apa': return formatAPA(c);
-        case 'plaintext': return formatPlaintext(c);
-      }
-    }).join('\n\n');
+    return uniqueCitations.map(c => formatCitation(c, exportFormat)).join('\n\n');
   };
 
   const handleCopy = async () => {
@@ -134,7 +269,7 @@ const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) =>
 
   const handleDownload = () => {
     const content = getFormattedCitations();
-    const ext = exportFormat === 'bibtex' ? 'bib' : 'txt';
+    const ext = getFileExtension(exportFormat);
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -165,19 +300,19 @@ const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) =>
       {isOpen && (
         <div className="border-t border-zinc-800 p-4">
           {/* Export Controls */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex gap-1">
-              {(['bibtex', 'apa', 'plaintext'] as const).map(format => (
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div className="flex flex-wrap gap-1">
+              {(['apa', 'mla', 'chicago', 'vancouver', 'bibtex', 'ris', 'endnote'] as CitationFormat[]).map(format => (
                 <button
                   key={format}
                   onClick={() => setExportFormat(format)}
-                  className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded transition-colors ${
+                  className={`px-2 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-colors ${
                     exportFormat === format 
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
                       : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700'
                   }`}
                 >
-                  {format}
+                  {FORMAT_LABELS[format]}
                 </button>
               ))}
             </div>
@@ -194,7 +329,7 @@ const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) =>
                 className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 rounded border border-emerald-500/30 transition-colors"
               >
                 <Download className="w-3 h-3" />
-                Download
+                Download All
               </button>
             </div>
           </div>
@@ -215,9 +350,12 @@ const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) =>
                       {citation.journal}
                     </p>
                   </div>
-                  <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-500 font-mono shrink-0">
-                    [{idx + 1}]
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <CitationDownloadButtons citation={citation} />
+                    <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-500 font-mono">
+                      [{idx + 1}]
+                    </span>
+                  </div>
                 </div>
                 <div className="mt-2 pt-2 border-t border-zinc-800/50">
                   <span className="text-[9px] text-emerald-400/80 font-medium">Relevance: </span>
