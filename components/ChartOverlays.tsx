@@ -63,9 +63,15 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
   // atan2(dy, dx) gives angle in radians
   const angleDeg = Math.atan2(py2 - py1, px2 - px1) * (180 / Math.PI);
   
-  // Position label at ~84% along the line (closer to bottom-right corner)
-  const labelPctX = 84;
-  const labelPctY = 73;
+  // Position label at ~20% along the line (in the impossible region, lower-left area)
+  // Interpolate between start and end points
+  const labelT = 0.20; // 20% along the line from start
+  const labelPctX = x1 + (x2 - x1) * labelT;
+  const labelPctY = y1 + (y2 - y1) * labelT;
+  
+  // Pixel coordinates for rotation center
+  const labelPxX = (labelPctX / 100) * width;
+  const labelPxY = (labelPctY / 100) * height;
 
   return (
     <g>
@@ -92,7 +98,7 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
         fontSize="12" 
         fontFamily="monospace" 
         fontWeight="bold" 
-        transform={`rotate(${angleDeg}, ${width * labelPctX / 100}, ${height * labelPctY / 100})`}
+        transform={`rotate(${angleDeg}, ${labelPxX}, ${labelPxY})`}
         style={{ 
           pointerEvents: 'none', 
           textShadow: '0px 1px 2px rgba(0,0,0,0.8)',

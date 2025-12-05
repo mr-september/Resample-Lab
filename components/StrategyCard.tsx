@@ -112,7 +112,7 @@ const FORMAT_LABELS: Record<CitationFormat, string> = {
 
 // --- Individual Citation Download Component ---
 
-const CitationDownloadButtons: React.FC<{ citation: Citation }> = ({ citation }) => {
+const CitationDownloadButtons: React.FC<{ citation: Citation; menuDirection?: 'down' | 'up' }> = ({ citation, menuDirection = 'down' }) => {
   const [showMenu, setShowMenu] = useState(false);
 
   const handleDownload = (format: CitationFormat) => {
@@ -137,6 +137,10 @@ const CitationDownloadButtons: React.FC<{ citation: Citation }> = ({ citation })
     setShowMenu(false);
   };
 
+  const menuPositionClasses = menuDirection === 'up' 
+    ? 'bottom-full mb-1' 
+    : 'top-full mt-1';
+
   return (
     <div className="relative">
       <button
@@ -145,13 +149,13 @@ const CitationDownloadButtons: React.FC<{ citation: Citation }> = ({ citation })
       >
         <Download className="w-2.5 h-2.5" />
         Export
-        <ChevronDown className="w-2.5 h-2.5" />
+        <ChevronDown className={`w-2.5 h-2.5 transition-transform ${showMenu && menuDirection === 'up' ? 'rotate-180' : ''}`} />
       </button>
       
       {showMenu && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-          <div className="absolute right-0 top-full mt-1 z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl min-w-[140px] overflow-hidden">
+          <div className="fixed inset-0 z-[100]" onClick={() => setShowMenu(false)} />
+          <div className={`absolute right-0 ${menuPositionClasses} z-[101] bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl min-w-[140px] overflow-hidden`}>
             <div className="text-[8px] text-zinc-500 uppercase tracking-wider px-2 py-1 border-b border-zinc-800">
               Copy to Clipboard
             </div>
@@ -175,6 +179,102 @@ const CitationDownloadButtons: React.FC<{ citation: Citation }> = ({ citation })
                 className="w-full text-left px-2 py-1.5 text-[10px] text-zinc-300 hover:bg-zinc-800 flex items-center gap-2"
               >
                 <Download className="w-2.5 h-2.5 text-emerald-500" />
+                {FORMAT_LABELS[format]} (.{getFileExtension(format)})
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// --- Bulk Export Dropdown Components ---
+
+const BulkCopyDropdown: React.FC<{ citations: Citation[] }> = ({ citations }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const handleCopy = async (format: CitationFormat) => {
+    const content = citations.map(c => formatCitation(c, format)).join('\n\n');
+    await navigator.clipboard.writeText(content);
+    setCopied(format);
+    setTimeout(() => setCopied(null), 1500);
+    setTimeout(() => setShowMenu(false), 800);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+        className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:text-white rounded border border-zinc-700 hover:border-zinc-600 transition-colors"
+      >
+        {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+        {copied ? 'Copied!' : 'Copy All'}
+        <ChevronDown className="w-3 h-3" />
+      </button>
+      
+      {showMenu && (
+        <>
+          <div className="fixed inset-0 z-[100]" onClick={() => setShowMenu(false)} />
+          <div className="absolute right-0 top-full mt-1 z-[101] bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl min-w-[120px] overflow-hidden">
+            {(['apa', 'mla', 'chicago', 'vancouver', 'bibtex'] as CitationFormat[]).map(format => (
+              <button
+                key={format}
+                onClick={() => handleCopy(format)}
+                className="w-full text-left px-3 py-1.5 text-[10px] text-zinc-300 hover:bg-zinc-800 flex items-center gap-2"
+              >
+                {copied === format ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-zinc-500" />}
+                {FORMAT_LABELS[format]}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const BulkDownloadDropdown: React.FC<{ citations: Citation[] }> = ({ citations }) => {
+  const [showMenu, setShowMenu] = useState(false);
+
+  const handleDownload = (format: CitationFormat) => {
+    const content = citations.map(c => formatCitation(c, format)).join('\n\n');
+    const ext = getFileExtension(format);
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `resample-lab-citations.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setShowMenu(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+        className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 rounded border border-emerald-500/30 transition-colors"
+      >
+        <Download className="w-3 h-3" />
+        Download All
+        <ChevronDown className="w-3 h-3" />
+      </button>
+      
+      {showMenu && (
+        <>
+          <div className="fixed inset-0 z-[100]" onClick={() => setShowMenu(false)} />
+          <div className="absolute right-0 top-full mt-1 z-[101] bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl min-w-[140px] overflow-hidden">
+            {(['bibtex', 'ris', 'endnote', 'apa', 'mla', 'chicago', 'vancouver'] as CitationFormat[]).map(format => (
+              <button
+                key={format}
+                onClick={() => handleDownload(format)}
+                className="w-full text-left px-3 py-1.5 text-[10px] text-zinc-300 hover:bg-zinc-800 flex items-center gap-2"
+              >
+                <Download className="w-3 h-3 text-emerald-500" />
                 {FORMAT_LABELS[format]} (.{getFileExtension(format)})
               </button>
             ))}
@@ -248,8 +348,6 @@ const RegimeWarningCard: React.FC<{ warning: NonNullable<Recommendation['regimeW
 
 const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState<CitationFormat>('apa');
-  const [copied, setCopied] = useState(false);
 
   const uniqueCitations = [...new Set(citationIds)]
     .map(id => CITATIONS[id])
@@ -257,35 +355,16 @@ const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) =>
 
   if (uniqueCitations.length === 0) return null;
 
-  const getFormattedCitations = (): string => {
-    return uniqueCitations.map(c => formatCitation(c, exportFormat)).join('\n\n');
-  };
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(getFormattedCitations());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleDownload = () => {
-    const content = getFormattedCitations();
-    const ext = getFileExtension(exportFormat);
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `resample-lab-citations.${ext}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // Determine menu direction based on citation index (last few should open upward)
+  const getMenuDirection = (idx: number): 'down' | 'up' => {
+    return idx >= uniqueCitations.length - 2 ? 'up' : 'down';
   };
 
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden">
-      <button 
+    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-visible">
+      <div 
+        className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors"
       >
         <div className="flex items-center gap-2 text-zinc-200">
           <BookOpen className="w-4 h-4 text-emerald-400" />
@@ -294,50 +373,20 @@ const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) =>
             {uniqueCitations.length}
           </span>
         </div>
-        {isOpen ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
-      </button>
+        <div className="flex items-center gap-2">
+          {/* Bulk action buttons in header */}
+          <BulkCopyDropdown citations={uniqueCitations} />
+          <BulkDownloadDropdown citations={uniqueCitations} />
+          {isOpen ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
+        </div>
+      </div>
 
       {isOpen && (
-        <div className="border-t border-zinc-800 p-4">
-          {/* Export Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <div className="flex flex-wrap gap-1">
-              {(['apa', 'mla', 'chicago', 'vancouver', 'bibtex', 'ris', 'endnote'] as CitationFormat[]).map(format => (
-                <button
-                  key={format}
-                  onClick={() => setExportFormat(format)}
-                  className={`px-2 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-colors ${
-                    exportFormat === format 
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                      : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700'
-                  }`}
-                >
-                  {FORMAT_LABELS[format]}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:text-white rounded border border-zinc-700 hover:border-zinc-600 transition-colors"
-              >
-                {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                {copied ? 'Copied!' : 'Copy All'}
-              </button>
-              <button
-                onClick={handleDownload}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 rounded border border-emerald-500/30 transition-colors"
-              >
-                <Download className="w-3 h-3" />
-                Download All
-              </button>
-            </div>
-          </div>
-
+        <div className="border-t border-zinc-800 p-4 overflow-visible">
           {/* Citation List */}
           <div className="space-y-3">
             {uniqueCitations.map((citation, idx) => (
-              <div key={citation.id} className="p-3 bg-zinc-950/50 rounded-lg border border-zinc-800/50">
+              <div key={citation.id} className="p-3 bg-zinc-950/50 rounded-lg border border-zinc-800/50 overflow-visible">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <p className="text-xs text-zinc-200 font-medium leading-tight mb-1">
@@ -351,7 +400,7 @@ const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) =>
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <CitationDownloadButtons citation={citation} />
+                    <CitationDownloadButtons citation={citation} menuDirection={getMenuDirection(idx)} />
                     <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-500 font-mono">
                       [{idx + 1}]
                     </span>
