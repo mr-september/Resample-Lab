@@ -79,16 +79,16 @@ export const TotalVsMinorityOverlay: React.FC<OverlayProps & { minority?: number
         <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f87171" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" vectorEffect="non-scaling-stroke" />
       </svg>
 
-      {/* Label - Rotated dynamically around its center (74% width, 91% height) */}
+      {/* Label - Rotated dynamically around its center (75% width, 83% height) */}
       <text 
-        x="74%" 
-        y="91%" 
+        x="75%" 
+        y="83%" 
         textAnchor="middle" 
         fill="#f87171" 
         fontSize="12" 
         fontFamily="monospace" 
         fontWeight="bold" 
-        transform={`rotate(${angleDeg}, ${width * 0.74}, ${height * 0.91})`}
+        transform={`rotate(${angleDeg}, ${width * 0.75}, ${height * 0.83})`}
         style={{ 
           pointerEvents: 'none', 
           textShadow: '0px 1px 2px rgba(0,0,0,0.8)',
