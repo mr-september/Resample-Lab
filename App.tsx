@@ -114,6 +114,35 @@ function App() {
             </div>
           </div>
 
+
+
+          {/* Support Badge */}
+          <div className="relative group mx-4">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-200 text-xs font-medium hover:bg-pink-500/20 transition-all">
+              <Heart className="w-3 h-3 text-pink-400" fill="currentColor" />
+              <span>Support the Lab</span>
+              <ChevronDown className="w-3 h-3 text-pink-500/50 group-hover:rotate-180 transition-transform" />
+            </button>
+
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 py-1 bg-[#09090b] border border-zinc-800 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top translate-y-2 group-hover:translate-y-0 z-50">
+              <div className="px-3 py-2 text-[10px] text-zinc-500 font-bold uppercase tracking-wider border-b border-zinc-900">
+                Donate via
+              </div>
+              <a href="https://www.paypal.com/donate/?hosted_button_id=WFXL2T42BBCRN" target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs text-zinc-300 hover:text-blue-400 hover:bg-zinc-900/50 transition-colors">
+                PayPal
+              </a>
+              <a href="https://ko-fi.com/Q5Q11I49GI" target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs text-zinc-300 hover:text-pink-400 hover:bg-zinc-900/50 transition-colors">
+                Ko-fi
+              </a>
+              <a href="https://liberapay.com/mr-september/donate" target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs text-zinc-300 hover:text-yellow-400 hover:bg-zinc-900/50 transition-colors">
+                Liberapay
+              </a>
+              <a href="https://nowpayments.io/donation?api_key=5b5fabd5-2c33-4525-99a3-bf27f587780c" target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs text-zinc-300 hover:text-emerald-400 hover:bg-zinc-900/50 transition-colors">
+                Crypto
+              </a>
+            </div>
+          </div>
+
           <div className="flex items-center gap-6">
             {/* Legend */}
             <div className="hidden md:flex items-center gap-6">
@@ -137,7 +166,7 @@ function App() {
             </a>
           </div>
         </div>
-      </header>
+      </header >
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -248,49 +277,12 @@ function App() {
             MIT License • Open Source
           </div>
 
-          <div className="flex items-center gap-6">
-            <span className="text-zinc-600 text-xs font-medium flex items-center gap-1.5">
-              <Heart className="w-3 h-3 text-pink-500/50" fill="currentColor" />
-              <span>Support the lab:</span>
-            </span>
-            <div className="flex items-center gap-4 text-xs font-medium text-zinc-500">
-              <a
-                href="https://www.paypal.com/donate/?hosted_button_id=WFXL2T42BBCRN"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-blue-400 transition-colors"
-              >
-                PayPal
-              </a>
-              <a
-                href="https://ko-fi.com/Q5Q11I49GI"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-pink-400 transition-colors"
-              >
-                Ko-fi
-              </a>
-              <a
-                href="https://liberapay.com/mr-september/donate"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-yellow-400 transition-colors"
-              >
-                Liberapay
-              </a>
-              <a
-                href="https://nowpayments.io/donation?api_key=5b5fabd5-2c33-4525-99a3-bf27f587780c"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-emerald-400 transition-colors"
-              >
-                Crypto
-              </a>
-            </div>
+          <div className="flex items-center gap-2 text-zinc-600 text-xs text-center md:text-right">
+            <span>Advanced Resampling Heuristics</span>
           </div>
         </div>
       </footer>
-    </div>
+    </div >
   );
 }
 
