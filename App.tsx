@@ -4,13 +4,13 @@ import { Controls } from './components/Controls';
 import { PhaseChart } from './components/PhaseChart';
 import { StrategyCard } from './components/StrategyCard';
 import { analyzeDataset, COLORS, getSmoothStrategyRGB, getFoldStabilityRGB } from './logic/recommendationEngine';
-import { 
-  FeaturesVsMinorityOverlay, 
-  FeaturesVsTotalOverlay, 
-  TotalVsMinorityOverlay, 
-  FoldsVsMinorityOverlay 
+import {
+  FeaturesVsMinorityOverlay,
+  FeaturesVsTotalOverlay,
+  TotalVsMinorityOverlay,
+  FoldsVsMinorityOverlay
 } from './components/ChartOverlays';
-import { FlaskConical, ChevronDown, ChevronUp, MousePointerClick, Layers, Info } from 'lucide-react';
+import { FlaskConical, ChevronDown, ChevronUp, MousePointerClick, Layers, Info, Github, Heart } from 'lucide-react';
 
 // --- Static Configurations ---
 
@@ -26,7 +26,7 @@ const MissionBrief = () => {
 
   return (
     <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden transition-all">
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-zinc-800/50 transition-colors"
       >
@@ -36,7 +36,7 @@ const MissionBrief = () => {
         </div>
         {isOpen ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
       </button>
-      
+
       {isOpen && (
         <div className="px-4 pb-4 pt-1 grid grid-cols-1 md:grid-cols-3 gap-4 text-zinc-400 text-xs leading-relaxed border-t border-zinc-800/50">
           <div className="space-y-1.5">
@@ -83,24 +83,24 @@ function App() {
   }, []);
 
   // Memoized Color Generators
-  const getColorMinorityFeatures = useCallback((x: number, y: number) => 
-    getSmoothStrategyRGB(y, x, params.total, params.sparsity, params.sparsityHomogeneity), 
-  [params.total, params.sparsity, params.sparsityHomogeneity]);
+  const getColorMinorityFeatures = useCallback((x: number, y: number) =>
+    getSmoothStrategyRGB(y, x, params.total, params.sparsity, params.sparsityHomogeneity),
+    [params.total, params.sparsity, params.sparsityHomogeneity]);
 
-  const getColorTotalFeatures = useCallback((x: number, y: number) => 
-    getSmoothStrategyRGB(y, params.minority, x, params.sparsity, params.sparsityHomogeneity), 
-  [params.minority, params.sparsity, params.sparsityHomogeneity]);
+  const getColorTotalFeatures = useCallback((x: number, y: number) =>
+    getSmoothStrategyRGB(y, params.minority, x, params.sparsity, params.sparsityHomogeneity),
+    [params.minority, params.sparsity, params.sparsityHomogeneity]);
 
-  const getColorMinorityTotal = useCallback((x: number, y: number) => 
-    getSmoothStrategyRGB(params.features, x, y, params.sparsity, params.sparsityHomogeneity), 
-  [params.features, params.sparsity, params.sparsityHomogeneity]);
+  const getColorMinorityTotal = useCallback((x: number, y: number) =>
+    getSmoothStrategyRGB(params.features, x, y, params.sparsity, params.sparsityHomogeneity),
+    [params.features, params.sparsity, params.sparsityHomogeneity]);
 
-  const getColorFolds = useCallback((x: number, y: number) => 
-    getFoldStabilityRGB(x, y), 
-  []);
+  const getColorFolds = useCallback((x: number, y: number) =>
+    getFoldStabilityRGB(x, y),
+    []);
 
   return (
-    <div className="min-h-screen bg-[#050507] text-zinc-100 selection:bg-indigo-500/30 font-sans">
+    <div className="min-h-screen flex flex-col bg-[#050507] text-zinc-100 selection:bg-indigo-500/30 font-sans">
       {/* Header */}
       <header className="border-b border-zinc-800/60 bg-black/20 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -113,26 +113,39 @@ function App() {
               <p className="text-[10px] text-zinc-500 font-medium tracking-wide uppercase mt-1">How to handle Class Imbalance</p>
             </div>
           </div>
-          
-          {/* Legend */}
-          <div className="hidden md:flex items-center gap-6">
-             {Object.entries(COLORS).map(([key, color]) => (
-               <div key={key} className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ backgroundColor: color }}></div>
-                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{key}</span>
-               </div>
-             ))}
+
+          <div className="flex items-center gap-6">
+            {/* Legend */}
+            <div className="hidden md:flex items-center gap-6">
+              {Object.entries(COLORS).map(([key, color]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ backgroundColor: color }}></div>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{key}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* GitHub Link */}
+            <a
+              href="https://github.com/mr-september/Resample-Lab"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-zinc-500 hover:text-indigo-400 transition-colors"
+              aria-label="View on GitHub"
+            >
+              <Github className="w-5 h-5" />
+            </a>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* Left Column: Controls */}
           <div className="lg:col-span-4 flex flex-col gap-6">
             <Controls params={params} onChange={handleUpdate} />
-            
+
             <div className="hidden lg:block p-4 rounded-xl border border-zinc-800/50 bg-zinc-900/20">
               <div className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-wider mb-3">
                 <Layers className="w-3 h-3" />
@@ -140,24 +153,24 @@ function App() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-3 text-[11px] text-zinc-500">
-                   <div className="w-16 text-right font-mono text-zinc-600">Top Left</div>
-                   <div className="h-px bg-zinc-800 flex-grow"></div>
-                   <span className="text-zinc-300">Features vs. Minority</span>
+                  <div className="w-16 text-right font-mono text-zinc-600">Top Left</div>
+                  <div className="h-px bg-zinc-800 flex-grow"></div>
+                  <span className="text-zinc-300">Features vs. Minority</span>
                 </div>
                 <div className="flex items-center gap-3 text-[11px] text-zinc-500">
-                   <div className="w-16 text-right font-mono text-zinc-600">Top Right</div>
-                   <div className="h-px bg-zinc-800 flex-grow"></div>
-                   <span className="text-zinc-300">Features vs. Total</span>
+                  <div className="w-16 text-right font-mono text-zinc-600">Top Right</div>
+                  <div className="h-px bg-zinc-800 flex-grow"></div>
+                  <span className="text-zinc-300">Features vs. Total</span>
                 </div>
                 <div className="flex items-center gap-3 text-[11px] text-zinc-500">
-                   <div className="w-16 text-right font-mono text-zinc-600">Bot Left</div>
-                   <div className="h-px bg-zinc-800 flex-grow"></div>
-                   <span className="text-zinc-300">Total vs. Minority</span>
+                  <div className="w-16 text-right font-mono text-zinc-600">Bot Left</div>
+                  <div className="h-px bg-zinc-800 flex-grow"></div>
+                  <span className="text-zinc-300">Total vs. Minority</span>
                 </div>
                 <div className="flex items-center gap-3 text-[11px] text-zinc-500">
-                   <div className="w-16 text-right font-mono text-zinc-600">Bot Right</div>
-                   <div className="h-px bg-zinc-800 flex-grow"></div>
-                   <span className="text-zinc-300">Folds vs. Minority</span>
+                  <div className="w-16 text-right font-mono text-zinc-600">Bot Right</div>
+                  <div className="h-px bg-zinc-800 flex-grow"></div>
+                  <span className="text-zinc-300">Folds vs. Minority</span>
                 </div>
               </div>
             </div>
@@ -165,11 +178,11 @@ function App() {
 
           {/* Right Column: Visuals & Strategy */}
           <div className="lg:col-span-8 flex flex-col gap-6">
-            
+
             <MissionBrief />
 
             <div className="grid grid-cols-[1fr_1fr] gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800 shadow-2xl relative group">
-              <PhaseChart 
+              <PhaseChart
                 height={240}
                 xConfig={CFG_MINORITY}
                 yConfig={CFG_FEATURES}
@@ -182,7 +195,7 @@ function App() {
                 className="rounded-tl-lg border-none"
               />
 
-              <PhaseChart 
+              <PhaseChart
                 height={240}
                 xConfig={CFG_TOTAL}
                 yConfig={CFG_FEATURES}
@@ -196,7 +209,7 @@ function App() {
                 titleAlignment="right"
               />
 
-              <PhaseChart 
+              <PhaseChart
                 height={240}
                 xConfig={CFG_MINORITY}
                 yConfig={CFG_TOTAL}
@@ -209,7 +222,7 @@ function App() {
                 className="rounded-bl-lg border-none border-t border-zinc-800"
               />
 
-               <PhaseChart 
+              <PhaseChart
                 height={240}
                 xConfig={CFG_MINORITY}
                 yConfig={CFG_FOLDS}
@@ -228,6 +241,55 @@ function App() {
           </div>
         </div>
       </main>
+
+      <footer className="border-t border-zinc-800/60 bg-black/20 backdrop-blur-md py-6 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="text-zinc-500 text-xs font-medium">
+            MIT License • Open Source
+          </div>
+
+          <div className="flex items-center gap-6">
+            <span className="text-zinc-600 text-xs font-medium flex items-center gap-1.5">
+              <Heart className="w-3 h-3 text-pink-500/50" fill="currentColor" />
+              <span>Support the lab:</span>
+            </span>
+            <div className="flex items-center gap-4 text-xs font-medium text-zinc-500">
+              <a
+                href="https://www.paypal.com/donate/?hosted_button_id=WFXL2T42BBCRN"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-blue-400 transition-colors"
+              >
+                PayPal
+              </a>
+              <a
+                href="https://ko-fi.com/Q5Q11I49GI"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-pink-400 transition-colors"
+              >
+                Ko-fi
+              </a>
+              <a
+                href="https://liberapay.com/mr-september/donate"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-yellow-400 transition-colors"
+              >
+                Liberapay
+              </a>
+              <a
+                href="https://nowpayments.io/donation?api_key=5b5fabd5-2c33-4525-99a3-bf27f587780c"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-emerald-400 transition-colors"
+              >
+                Crypto
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
