@@ -86,6 +86,29 @@ The recommendations in Resample Lab are based on peer-reviewed research. Below i
 | Zhao et al. | 2025 | A Survey on Small Sample Imbalance Problem | arXiv:2504.14800 | EISM definitions; hybrid ensemble recommendations |
 
 ---
+ 
+ ## 🔖 Citation
+ 
+ If you use Resample Lab in your research or project, please cite it as follows:
+ 
+ **BibTeX**
+ 
+ ```bibtex
+ @software{ResampleLab2025,
+   author = {mr-september},
+   title = {Resample Lab: Advanced Data Resampling Heuristics},
+   year = {2025},
+   publisher = {GitHub},
+   journal = {GitHub repository},
+   howpublished = {\url{https://github.com/mr-september/Resample-Lab}}
+ }
+ ```
+ 
+ **APA**
+ 
+ > mr-september. (2025). *Resample Lab: Advanced Data Resampling Heuristics* [Computer software]. GitHub. https://github.com/mr-september/Resample-Lab
+ 
+ ---
 
 ## ⚠️ Critical Regime Thresholds
 

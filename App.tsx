@@ -10,7 +10,7 @@ import {
   TotalVsMinorityOverlay,
   FoldsVsMinorityOverlay
 } from './components/ChartOverlays';
-import { FlaskConical, ChevronDown, ChevronUp, MousePointerClick, Layers, Info, Github, Heart } from 'lucide-react';
+import { FlaskConical, ChevronDown, ChevronUp, MousePointerClick, Layers, Info, Github, Heart, Quote, Check, Copy } from 'lucide-react';
 
 // --- Static Configurations ---
 
@@ -53,6 +53,86 @@ const MissionBrief = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+const CitationButton = () => {
+  const [copiedBib, setCopiedBib] = useState(false);
+  const [copiedAPA, setCopiedAPA] = useState(false);
+
+  const handleCopy = (text: string, type: 'bib' | 'apa') => {
+    navigator.clipboard.writeText(text);
+    if (type === 'bib') {
+      setCopiedBib(true);
+      setTimeout(() => setCopiedBib(false), 2000);
+    } else {
+      setCopiedAPA(true);
+      setTimeout(() => setCopiedAPA(false), 2000);
+    }
+  };
+
+  const bibtex = `@software{ResampleLab2025,
+   author = {mr-september},
+   title = {Resample Lab: Advanced Data Resampling Heuristics},
+   year = {2025},
+   publisher = {GitHub},
+   journal = {GitHub repository},
+   howpublished = {\\url{https://github.com/mr-september/Resample-Lab}}
+ }`;
+
+  const apa = `mr-september. (2025). Resample Lab: Advanced Data Resampling Heuristics [Computer software]. GitHub. https://github.com/mr-september/Resample-Lab`;
+
+  return (
+    <div className="relative group">
+      <button
+        className="text-zinc-500 hover:text-indigo-400 transition-colors"
+        aria-label="Cite this Lab"
+      >
+        <Quote className="w-5 h-5" />
+      </button>
+
+      <div className="absolute top-full right-0 mt-4 w-96 p-4 bg-[#09090b] border border-zinc-800 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top translate-y-2 group-hover:translate-y-0 z-50">
+        <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-3">
+          Cite Resample Lab
+        </div>
+
+        <div className="space-y-4">
+          {/* BibTeX */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-zinc-400">BibTeX</span>
+              <button
+                onClick={() => handleCopy(bibtex, 'bib')}
+                className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-indigo-400 transition-colors"
+              >
+                {copiedBib ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copiedBib ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <pre className="text-[10px] leading-relaxed p-2 bg-zinc-900/50 rounded-lg border border-zinc-800 text-zinc-400 overflow-x-auto text-left">
+              {bibtex}
+            </pre>
+          </div>
+
+          {/* APA */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-zinc-400">APA</span>
+              <button
+                onClick={() => handleCopy(apa, 'apa')}
+                className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-indigo-400 transition-colors"
+              >
+                {copiedAPA ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copiedAPA ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <div className="text-[10px] leading-relaxed p-2 bg-zinc-900/50 rounded-lg border border-zinc-800 text-zinc-400 text-left">
+              {apa}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -153,6 +233,9 @@ function App() {
                 </div>
               ))}
             </div>
+
+            {/* Citation */}
+            <CitationButton />
 
             {/* GitHub Link */}
             <a
