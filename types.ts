@@ -123,6 +123,14 @@ export const CITATIONS: Record<string, Citation> = {
     title: 'Understanding the apparent superiority of over-sampling through an analysis of local information for class-imbalanced data',
     journal: 'Expert Systems with Applications, 158, 113026',
     relevance: 'Evidence that oversampling increases safe minority samples more than undersampling'
+  },
+  resampleLab2025: {
+    id: 'resampleLab2025',
+    authors: 'mr-september',
+    year: 2025,
+    title: 'Resample Lab: Advanced Data Resampling Heuristics',
+    journal: 'GitHub repository (https://github.com/mr-september/Resample-Lab)',
+    relevance: 'The Resample Lab tool itself.'
   }
 };
 
