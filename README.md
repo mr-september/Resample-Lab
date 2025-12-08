@@ -79,9 +79,9 @@ The recommendations in Resample Lab are based on peer-reviewed research. Below i
 | He & Garcia | 2009 | Learning from Imbalanced Data | IEEE TKDE, 21(9), 1263–1284 | Comprehensive imbalanced learning survey |
 | Blagus & Lusa | 2013 | SMOTE for high-dimensional class-imbalanced data | BMC Bioinformatics, 14(1), 106 | SMOTE degradation in high dimensions |
 | Barua et al. | 2014 | MWMOTE—Majority Weighted Minority Oversampling | IEEE TKDE, 26(2), 405–425 | Weighted oversampling for hard-to-learn instances |
-| Elhassan & Aljurf | 2016 | Class imbalance problem: A review of recent techniques | J. Applied Sciences, 16(8), 314–328 | Comprehensive resampling technique review |
+| Dal Pozzolo et al. | 2015 | Calibrating Probability with Undersampling | IEEE SSCI 2015 | Resampling distorts probability estimates |
 | García et al. | 2020 | Understanding the apparent superiority of over-sampling | Expert Systems with Applications, 158, 113026 | Oversampling increases safe minority samples |
-| Hasanin et al. | 2020 | Over- and Under-sampling Approach for EISM Data | Frontiers in Public Health, 8, 178 | HUSDOS-Boost; stratified bagging for EISM |
+| Fujiwara et al. | 2020 | Over- and Under-sampling Approach for EISM Data | Frontiers in Public Health, 8, 178 | HUSDOS-Boost; stratified bagging for EISM |
 | Yang et al. | 2024 | A review on over-sampling techniques for multi-class imbalanced datasets | Frontiers in Digital Health, 6, 1430245 | Multi-class oversampling review |
 | Zhao et al. | 2025 | A Survey on Small Sample Imbalance Problem | arXiv:2504.14800 | EISM definitions; hybrid ensemble recommendations |
 
@@ -116,7 +116,7 @@ Based on the literature, Resample Lab identifies three critical regimes:
 
 | Regime | Trigger Condition | Rationale | Primary Sources |
 |--------|-------------------|-----------|-----------------|
-| **🔴 Tiny Minority / EISM** | Minority < 50 samples OR EPV < 10 | Synthetic methods may generate unreliable samples; overfitting risk high | Zhao et al. 2025, Hasanin et al. 2020 |
+| **🔴 Tiny Minority / EISM** | Minority < 50 samples OR EPV < 10 | Synthetic methods may generate unreliable samples; overfitting risk high | Zhao et al. 2025, Fujiwara et al. 2020 |
 | **🟠 High-Dimensional** | Features > 100 | SMOTE fails in high-dimensional spaces due to sparse neighborhoods | Blagus & Lusa 2013 |
 | **🟡 Large-Scale** | Total samples > 50,000 | Undersampling preferred for computational efficiency | Drummond & Holte 2003, Van Hulse et al. 2007 |
 

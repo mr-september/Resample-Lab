@@ -76,14 +76,14 @@ const sigmoid = (val: number, threshold: number, k: number = 12) => {
 
 const getMinorityThreshold = (p: number): number => {
   if (p <= THRESHOLDS.DIM_LOW) return THRESHOLDS.MIN_SAMPLES_BASE;
-  if (p <= THRESHOLDS.DIM_HIGH) return THRESHOLDS.MIN_SAMPLES_BASE + (p - THRESHOLDS.DIM_LOW) * 2.5; 
-  return 400 + 200 * Math.log10(p / 100); 
+  if (p <= THRESHOLDS.DIM_HIGH) return THRESHOLDS.MIN_SAMPLES_BASE + (p - THRESHOLDS.DIM_LOW) * 2.5;
+  return 400 + 200 * Math.log10(p / 100);
 };
 
 const getDistanceStability = (sparsity: number, homogeneity: number): number => {
   if (sparsity < 0.3) return 1.0;
   const baseInstability = Math.pow(sparsity, 2.5);
-  const distributionImpact = 0.2 + (0.8 * homogeneity); 
+  const distributionImpact = 0.2 + (0.8 * homogeneity);
   const risk = baseInstability * distributionImpact;
   return Math.max(0, 1 - risk);
 };
@@ -116,26 +116,26 @@ interface WeightResult {
   wHybrid: number;
   wBaseline: number;
   stability: number;
-  dominantOriginal: StrategyType | null; 
+  dominantOriginal: StrategyType | null;
 }
 
 const calculateWeights = (
-  p: number, 
-  nMin: number, 
-  nTotal: number, 
-  sparsity: number, 
+  p: number,
+  nMin: number,
+  nTotal: number,
+  sparsity: number,
   homogeneity: number
 ): WeightResult => {
   const threshold = getMinorityThreshold(p);
-  
+
   // 1. Dimensionality Factors
-  const isLowDim = 1 - sigmoid(p, THRESHOLDS.DIM_LOW, 12); 
-  const isHighDim = sigmoid(p, THRESHOLDS.DIM_HIGH, 12); 
+  const isLowDim = 1 - sigmoid(p, THRESHOLDS.DIM_LOW, 12);
+  const isHighDim = sigmoid(p, THRESHOLDS.DIM_HIGH, 12);
   const isMedDim = 1 - isLowDim - isHighDim;
 
   // 2. Count & Ratio Factors
   const isTinyMin = 1 - sigmoid(nMin, threshold, 10);
-  
+
   // Efficiency Pressure: Driven by total size (cost) OR extreme imbalance
   const ratio = nTotal / Math.max(1, nMin);
   const isHighRatio = sigmoid(ratio, THRESHOLDS.EFFICIENCY_RATIO, 8);
@@ -148,13 +148,13 @@ const calculateWeights = (
   let wBaseline = 0;
 
   // 3. Logic Distribution
-  
+
   // Low Dim Regime
   if (isLowDim > 0.01) {
-     wOversample += isLowDim * isTinyMin;
-     const safeScore = isLowDim * (1 - isTinyMin);
-     wUndersample += safeScore * efficiencyPressure;
-     wBaseline    += safeScore * (1 - efficiencyPressure);
+    wOversample += isLowDim * isTinyMin;
+    const safeScore = isLowDim * (1 - isTinyMin);
+    wUndersample += safeScore * efficiencyPressure;
+    wBaseline += safeScore * (1 - efficiencyPressure);
   }
 
   // Med Dim Regime
@@ -162,7 +162,7 @@ const calculateWeights = (
     wHybrid += isMedDim * isTinyMin;
     const safeScore = isMedDim * (1 - isTinyMin);
     wUndersample += safeScore * efficiencyPressure;
-    wBaseline    += safeScore * (1 - efficiencyPressure);
+    wBaseline += safeScore * (1 - efficiencyPressure);
   }
 
   // High Dim Regime
@@ -178,7 +178,7 @@ const calculateWeights = (
   // Determine dominant strategy BEFORE sparsity penalties
   let dominantOriginal: StrategyType | null = null;
   const maxOrig = Math.max(wOversample, wUndersample, wHybrid, wBaseline);
-  
+
   if (maxOrig === wOversample) dominantOriginal = StrategyType.OVERSAMPLE;
   else if (maxOrig === wHybrid) dominantOriginal = StrategyType.HYBRID;
   else if (maxOrig === wUndersample) dominantOriginal = StrategyType.UNDERSAMPLE;
@@ -190,7 +190,7 @@ const calculateWeights = (
 
   if (penalty > 0) {
     wOversample -= wOversample * penalty;
-    wBaseline += wOversample * penalty; 
+    wBaseline += wOversample * penalty;
 
     wHybrid -= wHybrid * penalty;
     wBaseline += wHybrid * penalty;
@@ -202,8 +202,8 @@ const calculateWeights = (
 // --- Visual Generators ---
 
 export const getSmoothStrategyRGB = (
-  p: number, 
-  nMin: number, 
+  p: number,
+  nMin: number,
   nTotal: number,
   sparsity: number,
   homogeneity: number
@@ -212,14 +212,14 @@ export const getSmoothStrategyRGB = (
   const totalWeight = wOversample + wUndersample + wHybrid + wBaseline || 1;
 
   let r = 0, g = 0, b = 0;
-  
+
   // Helper to accumulate weighted colors
   const accumulate = (weight: number, type: StrategyType) => {
     if (weight > 0) {
       const normW = weight / totalWeight;
       const c = STRATEGY_RGB[type];
-      r += c.r * normW; 
-      g += c.g * normW; 
+      r += c.r * normW;
+      g += c.g * normW;
       b += c.b * normW;
     }
   };
@@ -234,24 +234,24 @@ export const getSmoothStrategyRGB = (
 
 export const getFoldStabilityRGB = (minority: number, folds: number): RGB => {
   const minPerFold = minority / Math.max(1, folds);
-  
+
   if (minPerFold < 1) return { r: 20, g: 10, b: 10 }; // Void (Invalid)
 
   let r, g, b;
   if (minPerFold < 5) {
-     // Deep Red to Bright Red
-     r = 220; g = 40; b = 40;
+    // Deep Red to Bright Red
+    r = 220; g = 40; b = 40;
   } else if (minPerFold < 30) {
-     // Interpolate Red -> Yellow -> Green
-     const t = (minPerFold - 5) / 25; 
-     r = 239 + (16 - 239) * t; 
-     g = 68 + (185 - 68) * t;
-     b = 68 + (129 - 68) * t;
+    // Interpolate Red -> Yellow -> Green
+    const t = (minPerFold - 5) / 25;
+    r = 239 + (16 - 239) * t;
+    g = 68 + (185 - 68) * t;
+    b = 68 + (129 - 68) * t;
   } else {
-     // Stable Green
-     r = 16; g = 185; b = 129; 
+    // Stable Green
+    r = 16; g = 185; b = 129;
   }
-  
+
   return { r, g, b };
 };
 
@@ -259,8 +259,8 @@ const analyzeFolds = (minority: number, folds: number, total: number): FoldAnaly
   const effectiveFolds = Math.min(folds, total);
   const minPerFold = minority / effectiveFolds;
   const minInTraining = Math.floor(minority * ((effectiveFolds - 1) / effectiveFolds));
-  
-  const viabilityScore = Math.min(100, (minPerFold / 30) * 100); 
+
+  const viabilityScore = Math.min(100, (minPerFold / 30) * 100);
   const isLOOCV = effectiveFolds >= total || effectiveFolds >= 5000;
   const isStratificationImpossible = effectiveFolds > minority;
 
@@ -271,7 +271,7 @@ const analyzeFolds = (minority: number, folds: number, total: number): FoldAnaly
   if (isLOOCV) {
     statusKey = 'LOO';
     validationRisk = "Validation reduces to binary (0/1) loss. Probability calibration is impossible.";
-    trainingImpact = `Maximizes training data (N=${total-1}), but computationally expensive.`;
+    trainingImpact = `Maximizes training data (N=${total - 1}), but computationally expensive.`;
   } else if (isStratificationImpossible) {
     statusKey = 'IMPOSSIBLE';
     validationRisk = `Folds (k=${effectiveFolds}) > Minority Samples (${minority}). Stratification is impossible.`;
@@ -279,7 +279,7 @@ const analyzeFolds = (minority: number, folds: number, total: number): FoldAnaly
   } else if (minPerFold < 1.5) {
     statusKey = 'LOPO';
     validationRisk = "Single positive sample per fold prevents variance estimation.";
-    trainingImpact = `Maximized Training (~${minority-1} positives per round).`;
+    trainingImpact = `Maximized Training (~${minority - 1} positives per round).`;
   } else if (minPerFold < 15) {
     statusKey = 'VARIANCE';
     validationRisk = `Low density (${minPerFold.toFixed(1)} samples/fold) results in noisy performance metrics.`;
@@ -289,19 +289,19 @@ const analyzeFolds = (minority: number, folds: number, total: number): FoldAnaly
     validationRisk = "Sufficient density for stable metric estimation (e.g., AUC-ROC, F1).";
     trainingImpact = `Standard Stratified K-Fold Split.`;
   }
-  
+
   const config = FOLD_STATUS_CONFIG[statusKey];
   const displayMinPerFold = minPerFold < 1 ? minPerFold.toFixed(2) : Math.floor(minPerFold);
 
-  return { 
-    minPerFold: Number(displayMinPerFold), 
-    minInTraining, 
-    label: config.label, 
-    statusColor: config.color, 
-    statusBg: config.bg, 
-    viabilityScore: (isStratificationImpossible && !isLOOCV) ? 0 : viabilityScore, 
-    validationRisk, 
-    trainingImpact 
+  return {
+    minPerFold: Number(displayMinPerFold),
+    minInTraining,
+    label: config.label,
+    statusColor: config.color,
+    statusBg: config.bg,
+    viabilityScore: (isStratificationImpossible && !isLOOCV) ? 0 : viabilityScore,
+    validationRisk,
+    trainingImpact
   };
 };
 
@@ -309,7 +309,7 @@ const analyzeFolds = (minority: number, folds: number, total: number): FoldAnaly
 
 export const analyzeDataset = (params: DatasetParams): Recommendation => {
   const { features, minority, total, folds, sparsity, sparsityHomogeneity, requiresCalibratedProbabilities } = params;
-  
+
   const weights = calculateWeights(features, minority, total, sparsity, sparsityHomogeneity);
   const { wOversample, wUndersample, wHybrid, wBaseline, stability, dominantOriginal } = weights;
 
@@ -331,7 +331,7 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
     // SMOTE fails in tiny minority regime - recommend hybrid/ensemble instead
     strategy = StrategyType.HYBRID;
   }
-  
+
   if (inLargeScaleRegime && !inTinyMinorityRegime) {
     // Large scale: prefer undersampling + threshold tuning
     strategy = StrategyType.UNDERSAMPLE;
@@ -347,7 +347,7 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
   const foldAnalysis = analyzeFolds(minority, folds, total);
   const threshold = getMinorityThreshold(features);
   const ratio = total / Math.max(1, minority);
-  
+
   // Build regime warnings
   const regimeWarnings: RegimeWarning[] = [];
   const citations: string[] = [];
@@ -357,7 +357,7 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
     regimeWarnings.push({
       type: 'tiny-minority',
       title: 'Tiny Minority Regime (EISM)',
-      message: minority < THRESHOLDS.TINY_MINORITY 
+      message: minority < THRESHOLDS.TINY_MINORITY
         ? `Minority class (N=${minority}) < 50 samples. Standard SMOTE interpolates between sparse noise rather than true structure. Recommend: Hybrid Ensembles (e.g., HUSDOS-Boost) or Stratified Bagging.`
         : `Events Per Variable (EPV=${epv.toFixed(1)}) < 10. Insufficient signal density for reliable synthetic generation.`,
       citationIds: ['zhao2025', 'chawla2002']
@@ -393,9 +393,9 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
       type: 'calibration',
       title: 'Calibration Impact',
       message: 'All resampling methods distort probability estimates. A predicted 80% risk may actually represent 10% true probability. If calibrated probabilities are required, use Class Weights + Isotonic Calibration instead.',
-      citationIds: ['elhassan2016']
+      citationIds: ['dalpozzolo2015']
     });
-    citations.push('elhassan2016');
+    citations.push('dalpozzolo2015');
   }
 
   // Fold Integrity Warning (always show as best practice)
@@ -403,7 +403,7 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
     type: 'fold-integrity',
     title: 'Cross-Validation Best Practice',
     message: 'Apply Feature Selection and Resampling INSIDE the cross-validation loop, not before. Performing these steps on the full dataset causes data leakage and inflated performance estimates.',
-    citationIds: ['blagus2013', 'elhassan2016']
+    citationIds: ['blagus2013', 'he2009']
   });
 
   // Generate Text Content
@@ -420,8 +420,8 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
     regimeWarnings
   };
 
-  const transitionNote = (minority > threshold * 0.8 && minority < threshold * 1.2) 
-    ? " You are in a complex transition zone. " 
+  const transitionNote = (minority > threshold * 0.8 && minority < threshold * 1.2)
+    ? " You are in a complex transition zone. "
     : "";
 
   const wasForcedToBaseline = strategy === StrategyType.BASELINE && (dominantOriginal === StrategyType.OVERSAMPLE || dominantOriginal === StrategyType.HYBRID);
@@ -433,23 +433,23 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
   }
 
   if (wasForcedToBaseline) {
-     if (requiresCalibratedProbabilities) {
-        result.title = "Class Weights + Calibration";
-        result.description = "Probability Calibration Required.";
-        result.rationale = `Resampling would distort probability estimates. Class Weights maintain calibration while addressing imbalance. Apply Isotonic Calibration post-training for optimal Brier Score.`;
-     } else if (sparsity > 0.5 && sparsityHomogeneity < 0.3) {
-        result.title = `Specialized ${dominantOriginal}`;
-        result.description = "Structured Sparsity Detected.";
-        result.rationale = `High sparsity (${Math.round(sparsity*100)}%) but concentrated. Standard interpolation (SMOTE) is unreliable. Strategy: Process features separately—interpolate dense columns, impute sparse ones.`;
-        result.sparsityWarning = "Recommendation: Utilize SMOTE-NC or feature-specific handling.";
-        result.color = COLORS[dominantOriginal || StrategyType.HYBRID]; 
-     } else {
-        result.title = "No Resampling / Class Weights";
-        result.description = "Uniform Sparsity Risks Interpolation.";
-        result.rationale = `Normally ${dominantOriginal} is best, but ${Math.round(sparsity*100)}% uniform sparsity (Stability: ${stability.toFixed(2)}) renders synthetic neighborhood generation unreliable. Use Class Weights.`;
-        result.sparsityWarning = "Critical Sparsity: Euclidean distance metrics are unstable.";
-     }
-  } 
+    if (requiresCalibratedProbabilities) {
+      result.title = "Class Weights + Calibration";
+      result.description = "Probability Calibration Required.";
+      result.rationale = `Resampling would distort probability estimates. Class Weights maintain calibration while addressing imbalance. Apply Isotonic Calibration post-training for optimal Brier Score.`;
+    } else if (sparsity > 0.5 && sparsityHomogeneity < 0.3) {
+      result.title = `Specialized ${dominantOriginal}`;
+      result.description = "Structured Sparsity Detected.";
+      result.rationale = `High sparsity (${Math.round(sparsity * 100)}%) but concentrated. Standard interpolation (SMOTE) is unreliable. Strategy: Process features separately—interpolate dense columns, impute sparse ones.`;
+      result.sparsityWarning = "Recommendation: Utilize SMOTE-NC or feature-specific handling.";
+      result.color = COLORS[dominantOriginal || StrategyType.HYBRID];
+    } else {
+      result.title = "No Resampling / Class Weights";
+      result.description = "Uniform Sparsity Risks Interpolation.";
+      result.rationale = `Normally ${dominantOriginal} is best, but ${Math.round(sparsity * 100)}% uniform sparsity (Stability: ${stability.toFixed(2)}) renders synthetic neighborhood generation unreliable. Use Class Weights.`;
+      result.sparsityWarning = "Critical Sparsity: Euclidean distance metrics are unstable.";
+    }
+  }
   else if (inTinyMinorityRegime && strategy === StrategyType.HYBRID) {
     result.title = "Hybrid Ensemble / Stratified Bagging";
     result.description = "Tiny Minority Regime Detected.";
@@ -496,16 +496,16 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
       result.rationale = `Undersampling reduces computational load and noise without disrupting the manifold structure in high dimensions. Consider feature selection to improve distance metric reliability.`;
     }
   }
-  
+
   if (!result.sparsityWarning && sparsity > THRESHOLDS.SPARSITY_CRITICAL) {
-     result.sparsityWarning = sparsityHomogeneity < 0.4 
-       ? "Structured Sparsity: Use Nominal/Continuous variants (e.g., SMOTE-NC)."
-       : "Caution: High sparsity reduces distance metric reliability.";
+    result.sparsityWarning = sparsityHomogeneity < 0.4
+      ? "Structured Sparsity: Use Nominal/Continuous variants (e.g., SMOTE-NC)."
+      : "Caution: High sparsity reduces distance metric reliability.";
   }
 
   if (foldAnalysis.label.includes("Leave-One-Out")) {
-      result.foldTarget = "Leave-One-Out (LOOCV)";
-      result.samplingMix = "N/A (All data utilized).";
+    result.foldTarget = "Leave-One-Out (LOOCV)";
+    result.samplingMix = "N/A (All data utilized).";
   } else if (folds > minority) {
     result.foldTarget = "INVALID CONFIGURATION";
     result.samplingMix = `Cannot stratify ${folds} folds with ${minority} samples.`;

@@ -51,13 +51,13 @@ export const CITATIONS: Record<string, Citation> = {
     journal: 'Proceedings of the 20th International Conference on Machine Learning (ICML)',
     relevance: 'Undersampling efficiency for large datasets'
   },
-  elhassan2016: {
-    id: 'elhassan2016',
-    authors: 'Elhassan, T., & Aljurf, M.',
-    year: 2016,
-    title: 'Class imbalance problem: A review of recent techniques',
-    journal: 'Journal of Applied Sciences, 16(8), 314-328',
-    relevance: 'Comprehensive review of resampling techniques'
+  dalpozzolo2015: {
+    id: 'dalpozzolo2015',
+    authors: 'Dal Pozzolo, A., Caelen, O., Johnson, R. A., & Bontempi, G.',
+    year: 2015,
+    title: 'Calibrating Probability with Undersampling for Unbalanced Classification',
+    journal: 'IEEE Symposium Series on Computational Intelligence, 159-166',
+    relevance: 'Resampling distorts probability estimates; calibration required'
   },
   vanhulse2007: {
     id: 'vanhulse2007',
@@ -84,9 +84,9 @@ export const CITATIONS: Record<string, Citation> = {
     journal: 'Frontiers in Digital Health, 6, 1430245',
     relevance: 'Comprehensive review of multi-class oversampling methods'
   },
-  hasanin2020: {
-    id: 'hasanin2020',
-    authors: 'Hasanin, T., Khoshgoftaar, T. M., Leevy, J. L., & Bauder, R. A.',
+  fujiwara2020: {
+    id: 'fujiwara2020',
+    authors: 'Fujiwara, K., Huang, Y., Hori, K., Nishioji, K., & Kobayashi, M.',
     year: 2020,
     title: 'Over- and Under-sampling Approach for Extremely Imbalanced and Small Minority Data Problem in Health Record Analysis',
     journal: 'Frontiers in Public Health, 8, 178',
