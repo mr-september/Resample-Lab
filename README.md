@@ -144,17 +144,3 @@ MIT License - see [LICENSE](LICENSE) file for details.
   </picture>
   </a>
 </div>
-
----
-
-<div align="center">
-
-**🧪 Resample Lab**
-
-*Making imbalanced data accessible through research-backed recommendations*
-
-Made with ❤️ for the data science community
-
-[📥 Try Demo](https://mr-september.github.io/Resample-Lab/) • [🐛 Report Bug](https://github.com/mr-september/Resample-Lab/issues) • [💡 Request Feature](https://github.com/mr-september/Resample-Lab/issues)
-
-</div>
