@@ -1,45 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Resample Lab</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      /* Custom Scrollbar for aesthetic continuity */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #18181b;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #3f3f46;
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #52525b;
-      }
-      body {
-        background-color: #09090b;
-        color: #e4e4e7;
-      }
-      
-      /* Invalid Zone Pattern - Hazard Style */
-      .pattern-striped {
-        background-color: rgba(20, 0, 0, 0.3);
-        background-image: repeating-linear-gradient(
-          -45deg,
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resample Lab | Class Imbalance Heuristics</title>
+  <meta name="description"
+    content="Interactive visualization and heuristic engine for determining optimal resampling strategies in machine learning. Analyze minority class density, feature dimensionality, and stability." />
+  <meta name="keywords"
+    content="machine learning, class imbalance, smote, resampling, data science, visualization, heuristics" />
+  <link rel="canonical" href="https://mr-september.github.io/Resample-Lab/" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://mr-september.github.io/Resample-Lab/" />
+  <meta property="og:title" content="Resample Lab | Advanced Class Imbalance Heuristics" />
+  <meta property="og:description"
+    content="Discover the best resampling strategy for your dataset. Interactive phase-space visualization for Machine Learning practitioners." />
+  <meta property="og:image" content="https://mr-september.github.io/Resample-Lab/og-image.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://mr-september.github.io/Resample-Lab/" />
+  <meta property="twitter:title" content="Resample Lab | Advanced Class Imbalance Heuristics" />
+  <meta property="twitter:description"
+    content="Discover the best resampling strategy for your dataset. Interactive phase-space visualization for Machine Learning practitioners." />
+  <meta property="twitter:image" content="https://mr-september.github.io/Resample-Lab/og-image.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom Scrollbar for aesthetic continuity */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #18181b;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #3f3f46;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #52525b;
+    }
+
+    body {
+      background-color: #09090b;
+      color: #e4e4e7;
+    }
+
+    /* Invalid Zone Pattern - Hazard Style */
+    .pattern-striped {
+      background-color: rgba(20, 0, 0, 0.3);
+      background-image: repeating-linear-gradient(-45deg,
           rgba(255, 50, 50, 0.03),
           rgba(255, 50, 50, 0.03) 10px,
           rgba(0, 0, 0, 0.1) 10px,
-          rgba(0, 0, 0, 0.1) 20px
-        );
-      }
-    </style>
-    <script type="module" crossorigin src="./assets/index-2xflsDFx.js"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+          rgba(0, 0, 0, 0.1) 20px);
+    }
+  </style>
+  <script type="module" crossorigin src="./assets/index-Du-7s-eu.js"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+</body>
+
 </html>
