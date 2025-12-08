@@ -10,9 +10,7 @@ Resample Lab provides general guidelines on how to treat imbalanced datasets thr
 
 🔬 Research-Backed | 📊 Interactive | 🎯 Actionable Recommendations
 
-### 🚀 Try It Now
-
-[**🌐 Live Demo**](https://mr-september.github.io/Resample-Lab/) | [**📚 Documentation**](https://github.com/mr-september/Resample-Lab#readme) | [**💬 Discussions**](https://github.com/mr-september/Resample-Lab/issues)
+### [**🌐 Try it Live**](https://mr-september.github.io/Resample-Lab/)
 
 </div>
 
