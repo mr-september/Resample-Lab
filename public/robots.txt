@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mr-september.github.io/Resample-Lab/sitemap.xml

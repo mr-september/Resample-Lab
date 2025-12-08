@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Recommendation, CITATIONS, Citation } from '../types';
-import { AlertCircle, Scale, Layers, BarChart2, GraduationCap, AlertTriangle, Info, BookOpen, Download, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
+import { Recommendation, Citation } from '../types';
+import { CITATIONS } from '../data/citations';
+import { AlertCircle, Scale, Layers, BarChart2, GraduationCap, AlertTriangle, Info, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { CitationDownloadButtons, BulkCopyDropdown, BulkDownloadDropdown } from './CitationActions';
 
 interface StrategyCardProps {
@@ -71,9 +72,9 @@ const RegimeWarningCard: React.FC<{ warning: NonNullable<Recommendation['regimeW
 const CitationsPanel: React.FC<{ citationIds: string[] }> = ({ citationIds }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const uniqueCitations = [...new Set(citationIds)]
-    .map(id => CITATIONS[id])
-    .filter(Boolean);
+  const uniqueCitations = Array.from(new Set(citationIds))
+    .map((id: string) => CITATIONS[id])
+    .filter(Boolean) as Citation[];
 
   if (uniqueCitations.length === 0) return null;
 

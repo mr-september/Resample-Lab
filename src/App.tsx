@@ -3,6 +3,8 @@ import { DatasetParams, AxisConfig } from './types';
 import { Controls } from './components/Controls';
 import { PhaseChart } from './components/PhaseChart';
 import { StrategyCard } from './components/StrategyCard';
+import { MissionBrief } from './components/MissionBrief';
+import { CitationButton } from './components/CitationButton';
 import { analyzeDataset, COLORS, getSmoothStrategyRGB, getFoldStabilityRGB } from './logic/recommendationEngine';
 import {
   FeaturesVsMinorityOverlay,
@@ -10,9 +12,7 @@ import {
   TotalVsMinorityOverlay,
   FoldsVsMinorityOverlay
 } from './components/ChartOverlays';
-import { FlaskConical, ChevronDown, ChevronUp, MousePointerClick, Layers, Info, Github, Heart, Quote, Check, Copy, Download } from 'lucide-react';
-import { CITATIONS } from './types';
-import { formatCitation, getFileExtension, CitationFormat, FORMAT_LABELS } from './logic/citationFormatting';
+import { FlaskConical, ChevronDown, Layers, Github, Heart } from 'lucide-react';
 
 // --- Static Configurations ---
 
@@ -21,147 +21,6 @@ const CFG_FEATURES: AxisConfig = { key: 'features', min: 5, max: 10000, label: '
 const CFG_TOTAL: AxisConfig = { key: 'total', min: 100, max: 10000000, label: 'Total Samples', scale: 'log' };
 const CFG_FOLDS: AxisConfig = { key: 'folds', min: 2, max: 100, label: 'CV Folds (K)', scale: 'log' };
 
-// --- Instructional Component ---
-
-const MissionBrief = () => {
-  const [isOpen, setIsOpen] = useState(true);
-
-  return (
-    <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden transition-all">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-zinc-800/50 transition-colors"
-      >
-        <div className="flex items-center gap-2.5 text-sm font-semibold text-indigo-200">
-          <Info className="w-4 h-4 text-indigo-400" />
-          <span>Quick Start Guide</span>
-        </div>
-        {isOpen ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
-      </button>
-
-      {isOpen && (
-        <div className="px-4 pb-4 pt-1 grid grid-cols-1 md:grid-cols-3 gap-4 text-zinc-400 text-xs leading-relaxed border-t border-zinc-800/50">
-          <div className="space-y-1.5">
-            <strong className="text-zinc-200 block">1. Define Parameters</strong>
-            <p>Set feature count (p) and class sizes. The engine evaluates if your minority density supports the feature dimensionality.</p>
-          </div>
-          <div className="space-y-1.5">
-            <strong className="text-zinc-200 block">2. Explore Phase Space</strong>
-            <p>The 4 charts map the "Resampling Phase Space". <span className="text-indigo-300 inline-flex items-center"><MousePointerClick className="w-3 h-3 mx-0.5" /> Click & Drag</span> charts to simulate different dataset conditions.</p>
-          </div>
-          <div className="space-y-1.5">
-            <strong className="text-zinc-200 block">3. Analyze Strategy</strong>
-            <p>Review the heuristic recommendation. These are general guidelines; always consult domain-specific best practices.</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const CitationButton = () => {
-  const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
-  const citation = CITATIONS.resampleLab2025;
-
-  // Guard against missing citation (though it should be in types)
-  if (!citation) return null;
-
-  const handleCopy = async (format: CitationFormat) => {
-    const content = formatCitation(citation, format);
-    await navigator.clipboard.writeText(content);
-    setCopiedFormat(format);
-    setTimeout(() => setCopiedFormat(null), 2000);
-  };
-
-  const handleDownload = (format: CitationFormat) => {
-    const content = formatCitation(citation, format);
-    const ext = getFileExtension(format);
-    const key = `${citation.authors.split(',')[0].split(' ').pop()?.toLowerCase()}${citation.year}`;
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${key}.${ext}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  return (
-    <div className="relative group flex items-center">
-      <button
-        className="text-zinc-500 hover:text-indigo-400 transition-colors flex items-center justify-center h-full"
-        aria-label="Cite this Lab"
-      >
-        <Quote className="w-5 h-5" />
-      </button>
-
-      <div className="absolute top-full right-0 mt-4 w-96 p-4 bg-[#09090b] border border-zinc-800 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top translate-y-2 group-hover:translate-y-0 z-50">
-        <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-3">
-          Cite Resample Lab
-        </div>
-
-        <div className="space-y-4">
-          {/* BibTeX */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-400">BibTeX</span>
-              <button
-                onClick={() => handleCopy('bibtex')}
-                className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-indigo-400 transition-colors"
-                aria-label="Copy BibTeX"
-              >
-                {copiedFormat === 'bibtex' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                {copiedFormat === 'bibtex' ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-            <pre className="text-[10px] leading-relaxed p-2 bg-zinc-900/50 rounded-lg border border-zinc-800 text-zinc-400 overflow-x-auto text-left scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
-              {formatCitation(citation, 'bibtex')}
-            </pre>
-          </div>
-
-          {/* APA */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-400">APA</span>
-              <button
-                onClick={() => handleCopy('apa')}
-                className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-indigo-400 transition-colors"
-                aria-label="Copy APA"
-              >
-                {copiedFormat === 'apa' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                {copiedFormat === 'apa' ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-            <div className="text-[10px] leading-relaxed p-2 bg-zinc-900/50 rounded-lg border border-zinc-800 text-zinc-400 text-left">
-              {formatCitation(citation, 'apa')}
-            </div>
-          </div>
-
-          {/* Download Options */}
-          <div className="pt-3 border-t border-zinc-800">
-            <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2">
-              Download Citation
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {(['bibtex', 'ris', 'endnote'] as CitationFormat[]).map(format => (
-                <button
-                  key={format}
-                  onClick={() => handleDownload(format)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900/50 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-emerald-400 transition-colors text-[10px] text-left"
-                >
-                  <Download className="w-3 h-3" />
-                  {FORMAT_LABELS[format]} (.{getFileExtension(format)})
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 function App() {
   const [params, setParams] = useState<DatasetParams>({

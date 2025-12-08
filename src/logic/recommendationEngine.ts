@@ -407,7 +407,7 @@ export const analyzeDataset = (params: DatasetParams): Recommendation => {
   });
 
   // Generate Text Content
-  let result: Recommendation = {
+  const result: Recommendation = {
     strategy,
     title: strategy,
     description: '',
